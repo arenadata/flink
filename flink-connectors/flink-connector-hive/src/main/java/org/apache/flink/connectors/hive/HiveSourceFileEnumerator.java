@@ -137,7 +137,7 @@ public class HiveSourceFileEnumerator implements FileEnumerator {
         long maxSplitBytes =
                 calculateMaxSplitBytes(
                         totalByteWithOpenCost, minNumSplits, defaultMaxSplitBytes, openCost);
-        jobConf.set(HiveConf.ConfVars.MAPREDMAXSPLITSIZE.varname, String.valueOf(maxSplitBytes));
+        jobConf.set(HiveConf.ConfVars.MAPRED_MAX_SPLIT_SIZE.varname, String.valueOf(maxSplitBytes));
     }
 
     private static long calculateMaxSplitBytes(

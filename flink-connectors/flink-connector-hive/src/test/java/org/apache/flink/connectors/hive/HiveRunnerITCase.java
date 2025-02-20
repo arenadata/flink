@@ -648,7 +648,7 @@ public class HiveRunnerITCase {
                             .addRow(new Object[] {"a", "b"})
                             .addRow(new Object[] {"c", "d"})
                             .commit();
-                    hiveCatalog.getHiveConf().setBoolVar(HiveConf.ConfVars.COMPRESSRESULT, true);
+                    hiveCatalog.getHiveConf().setBoolVar(HiveConf.ConfVars.COMPRESS_RESULT, true);
                     tableEnv.executeSql("insert into db1.dest select * from db1.src").await();
                     List<String> expected = Arrays.asList("a\tb", "c\td");
                     verifyHiveQueryResult("select * from db1.dest", expected);

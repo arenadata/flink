@@ -81,7 +81,7 @@ public class ScriptProcessBuilder {
 
         // Create an environment variable that uniquely identifies this script
         // operator
-        String idEnvVarName = HiveConf.getVar(jobConf, HiveConf.ConfVars.HIVESCRIPTIDENVVAR);
+        String idEnvVarName = HiveConf.getVar(jobConf, HiveConf.ConfVars.HIVE_SCRIPT_ID_ENV_VAR);
         String idEnvVarVal = operatorID.toString();
         env.put(safeEnvVarName(idEnvVarName), idEnvVarVal);
 
@@ -196,7 +196,7 @@ public class ScriptProcessBuilder {
 
     /** Wrap the script in a wrapper that allows admins to control. */
     private String[] addWrapper(String[] inArgs) {
-        String wrapper = HiveConf.getVar(jobConf, HiveConf.ConfVars.SCRIPTWRAPPER);
+        String wrapper = HiveConf.getVar(jobConf, HiveConf.ConfVars.SCRIPT_WRAPPER);
         if (wrapper == null) {
             return inArgs;
         }
@@ -222,7 +222,8 @@ public class ScriptProcessBuilder {
                 String value = conf.get(name); // does variable expansion
                 name = safeEnvVarName(name);
                 boolean truncate =
-                        conf.getBoolean(HiveConf.ConfVars.HIVESCRIPTTRUNCATEENV.toString(), false);
+                        conf.getBoolean(
+                                HiveConf.ConfVars.HIVE_SCRIPT_TRUNCATE_ENV.toString(), false);
                 value = safeEnvVarValue(value, name, truncate);
                 env.put(name, value);
             }
@@ -239,8 +240,8 @@ public class ScriptProcessBuilder {
             if (conf != null) {
                 String bl =
                         conf.get(
-                                HiveConf.ConfVars.HIVESCRIPT_ENV_BLACKLIST.toString(),
-                                HiveConf.ConfVars.HIVESCRIPT_ENV_BLACKLIST.getDefaultValue());
+                                HiveConf.ConfVars.HIVE_SCRIPT_ENV_BLACKLIST.toString(),
+                                HiveConf.ConfVars.HIVE_SCRIPT_ENV_BLACKLIST.getDefaultValue());
                 if (bl != null && !bl.isEmpty()) {
                     String[] bls = bl.split(",");
                     Collections.addAll(blackListedConfEntries, bls);

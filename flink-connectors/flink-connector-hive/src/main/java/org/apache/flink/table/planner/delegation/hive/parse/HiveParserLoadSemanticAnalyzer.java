@@ -111,7 +111,7 @@ public class HiveParserLoadSemanticAnalyzer {
             String fromPath = stripQuotes(fromTree.getText());
             fromURI = initializeFromURI(fromPath, isLocal);
         } catch (IOException | URISyntaxException e) {
-            throw new SemanticException(ErrorMsg.INVALID_PATH.getMsg(fromTree, e.getMessage()), e);
+            throw new SemanticException(ErrorMsg.INVALID_PATH.getMsg(fromTree.getText()), e);
         }
 
         // initialize destination table/partition
@@ -174,7 +174,7 @@ public class HiveParserLoadSemanticAnalyzer {
 
         // for managed tables, make sure the file formats match
         if (TableType.MANAGED_TABLE.equals(table.getTableType())
-                && conf.getBoolVar(HiveConf.ConfVars.HIVECHECKFILEFORMAT)) {
+                && conf.getBoolVar(HiveConf.ConfVars.HIVE_CHECK_FILEFORMAT)) {
             ensureFileFormatsMatch(ts, table, files, fromURI);
         }
 
@@ -198,7 +198,6 @@ public class HiveParserLoadSemanticAnalyzer {
         if (isLocal && !fromURI.getScheme().equals("file")) {
             throw new SemanticException(
                     ErrorMsg.ILLEGAL_PATH.getMsg(
-                            ast,
                             "Source file system should be \"file\" if \"local\" is specified"));
         }
 
@@ -214,7 +213,6 @@ public class HiveParserLoadSemanticAnalyzer {
                 if (oneSrc.isDir()) {
                     throw new SemanticException(
                             ErrorMsg.INVALID_PATH.getMsg(
-                                    ast,
                                     "source contains directory: " + oneSrc.getPath().toString()));
                 }
             }

@@ -34,8 +34,7 @@ import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
-import org.apache.hadoop.hive.serde2.Deserializer;
-import org.apache.hadoop.hive.serde2.SerDeUtils;
+import org.apache.hadoop.hive.serde2.AbstractSerDe;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.Writable;
@@ -63,7 +62,7 @@ public class HiveMapredSplitReader implements SplitReader {
     protected Writable value;
     private boolean fetched = false;
     private boolean hasNext;
-    private final Deserializer deserializer;
+    private final AbstractSerDe deserializer;
 
     // indices of fields to be returned, with projection applied (if any)
     // TODO: push projection into underlying input format that supports it
@@ -122,11 +121,10 @@ public class HiveMapredSplitReader implements SplitReader {
         value = this.recordReader.createValue();
         try {
             deserializer =
-                    (Deserializer)
+                    (AbstractSerDe)
                             Class.forName(sd.getSerdeInfo().getSerializationLib()).newInstance();
             Configuration conf = new Configuration();
-            SerDeUtils.initializeSerDe(
-                    deserializer, conf, hiveTablePartition.getTableProps(), null);
+            deserializer.initialize(conf, hiveTablePartition.getTableProps(), null);
             structObjectInspector = (StructObjectInspector) deserializer.getObjectInspector();
             structFields = structObjectInspector.getAllStructFieldRefs();
         } catch (Exception e) {

@@ -21,6 +21,7 @@ package org.apache.flink.table.planner.delegation.hive.copy;
 import org.apache.hadoop.hive.ql.lib.Dispatcher;
 import org.apache.hadoop.hive.ql.lib.GraphWalker;
 import org.apache.hadoop.hive.ql.lib.Node;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 
 import java.util.ArrayList;
@@ -72,7 +73,12 @@ public class HiveParserDefaultGraphWalker implements GraphWalker {
             }
         }
 
-        Object retVal = dispatcher.dispatch(nd, ndStack, nodeOutputs);
+        Object retVal = null;
+        try {
+            retVal = dispatcher.dispatch(nd, ndStack, nodeOutputs);
+        } catch (HiveException e) {
+            throw new RuntimeException(e);
+        }
         retMap.put(nd, retVal);
         return (T) retVal;
     }

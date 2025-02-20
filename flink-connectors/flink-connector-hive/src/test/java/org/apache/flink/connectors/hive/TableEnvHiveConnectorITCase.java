@@ -178,7 +178,7 @@ public class TableEnvHiveConnectorITCase {
                     tableEnv.executeSql("insert into db1.part select * from db1.src").await();
                     HiveConf hiveConf = hiveCatalog.getHiveConf();
                     String defaultPartName =
-                            hiveConf.getVar(HiveConf.ConfVars.DEFAULTPARTITIONNAME);
+                            hiveConf.getVar(HiveConf.ConfVars.DEFAULT_PARTITION_NAME);
                     Table hiveTable = hmsClient.getTable("db1", "part");
                     Path defaultPartPath =
                             new Path(hiveTable.getSd().getLocation(), "y=" + defaultPartName);

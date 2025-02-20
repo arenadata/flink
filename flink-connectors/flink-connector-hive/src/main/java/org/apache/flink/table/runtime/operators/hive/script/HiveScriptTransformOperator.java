@@ -224,7 +224,9 @@ public class HiveScriptTransformOperator extends TableStreamOperator<RowData>
         Properties properties = new Properties();
         properties.putAll(props);
         abstractSerDe.initialize(
-                ((JobConfWrapper) scriptTransformIOInfo.getSerializableConf()).conf(), properties);
+                ((JobConfWrapper) scriptTransformIOInfo.getSerializableConf()).conf(),
+                properties,
+                properties);
         return abstractSerDe;
     }
 

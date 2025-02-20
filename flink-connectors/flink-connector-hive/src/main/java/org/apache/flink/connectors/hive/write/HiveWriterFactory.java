@@ -38,9 +38,9 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
 import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
+import org.apache.hadoop.hive.serde2.AbstractSerDe;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDeException;
-import org.apache.hadoop.hive.serde2.SerDeUtils;
 import org.apache.hadoop.hive.serde2.Serializer;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
@@ -86,7 +86,7 @@ public class HiveWriterFactory implements Serializable {
 
     // SerDe in Hive-1.2.1 and Hive-2.3.4 can be of different classes, make sure to use a common
     // base class
-    private transient Serializer recordSerDe;
+    private transient AbstractSerDe recordSerDe;
 
     /** Field number excluding partition fields. */
     private transient int formatFields;
@@ -135,7 +135,7 @@ public class HiveWriterFactory implements Serializable {
             JobConf conf = new JobConf(confWrapper.conf());
 
             if (isCompressed) {
-                String codecStr = conf.get(HiveConf.ConfVars.COMPRESSINTERMEDIATECODEC.varname);
+                String codecStr = conf.get(HiveConf.ConfVars.COMPRESS_INTERMEDIATE_CODEC.varname);
                 if (!StringUtils.isNullOrWhitespaceOnly(codecStr)) {
                     //noinspection unchecked
                     Class<? extends CompressionCodec> codec =
@@ -146,7 +146,7 @@ public class HiveWriterFactory implements Serializable {
                                             Thread.currentThread().getContextClassLoader());
                     FileOutputFormat.setOutputCompressorClass(conf, codec);
                 }
-                String typeStr = conf.get(HiveConf.ConfVars.COMPRESSINTERMEDIATETYPE.varname);
+                String typeStr = conf.get(HiveConf.ConfVars.COMPRESS_INTERMEDIATE_TYPE.varname);
                 if (!StringUtils.isNullOrWhitespaceOnly(typeStr)) {
                     SequenceFile.CompressionType style =
                             SequenceFile.CompressionType.valueOf(typeStr);
@@ -182,11 +182,9 @@ public class HiveWriterFactory implements Serializable {
                 serdeLib instanceof Serializer && serdeLib instanceof Deserializer,
                 "Expect a SerDe lib implementing both Serializer and Deserializer, but actually got "
                         + serdeLib.getClass().getName());
-        this.recordSerDe = (Serializer) serdeLib;
+        this.recordSerDe = (AbstractSerDe) serdeLib;
         ReflectionUtils.setConf(recordSerDe, jobConf);
-
-        // TODO: support partition properties, for now assume they're same as table properties
-        SerDeUtils.initializeSerDe((Deserializer) recordSerDe, jobConf, tableProperties, null);
+        recordSerDe.initialize(jobConf, tableProperties, null);
 
         this.formatFields = allColumns.length - partitionColumns.length;
         this.hiveConversions = new HiveObjectConversion[formatFields];

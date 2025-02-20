@@ -47,13 +47,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVEHISTORYFILELOC;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_HISTORY_FILE_LOC;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_IN_TEST;
-import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.LOCALSCRATCHDIR;
-import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORECONNECTURLKEY;
-import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTOREURIS;
-import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTOREWAREHOUSE;
-import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.SCRATCHDIR;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.LOCAL_SCRATCH_DIR;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_CONNECT_URL_KEY;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_URIS;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_WAREHOUSE;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.SCRATCH_DIR;
 
 /**
  * Hive runner that uses local standalone HMS instead of embedded. Currently no test requires a
@@ -99,7 +99,7 @@ public class FlinkStandaloneHiveRunner extends FlinkEmbeddedHiveRunner {
     /** Launches HMS process and returns a Future representing that process. */
     private static Future<Void> startHMS(HiveServerContext context, int port) throws Exception {
         context.init();
-        context.getHiveConf().setVar(METASTOREURIS, "thrift://localhost:" + port);
+        context.getHiveConf().setVar(METASTORE_URIS, "thrift://localhost:" + port);
         HiveConf outsideConf = context.getHiveConf();
         List<String> args = new ArrayList<>();
         String javaHome = System.getProperty("java.home");
@@ -111,12 +111,14 @@ public class FlinkStandaloneHiveRunner extends FlinkEmbeddedHiveRunner {
         // set sys properties
         args.add(
                 hiveCmdLineConfig(
-                        METASTOREWAREHOUSE.varname, outsideConf.getVar(METASTOREWAREHOUSE)));
-        args.add(hiveCmdLineConfig(SCRATCHDIR.varname, outsideConf.getVar(SCRATCHDIR)));
-        args.add(hiveCmdLineConfig(LOCALSCRATCHDIR.varname, outsideConf.getVar(LOCALSCRATCHDIR)));
+                        METASTORE_WAREHOUSE.varname, outsideConf.getVar(METASTORE_WAREHOUSE)));
+        args.add(hiveCmdLineConfig(SCRATCH_DIR.varname, outsideConf.getVar(SCRATCH_DIR)));
         args.add(
                 hiveCmdLineConfig(
-                        HIVEHISTORYFILELOC.varname, outsideConf.getVar(HIVEHISTORYFILELOC)));
+                        LOCAL_SCRATCH_DIR.varname, outsideConf.getVar(LOCAL_SCRATCH_DIR)));
+        args.add(
+                hiveCmdLineConfig(
+                        HIVE_HISTORY_FILE_LOC.varname, outsideConf.getVar(HIVE_HISTORY_FILE_LOC)));
         // The following config is removed in Hive 3.1.0.
         args.add(
                 hiveCmdLineConfig(
@@ -128,8 +130,8 @@ public class FlinkStandaloneHiveRunner extends FlinkEmbeddedHiveRunner {
         args.add(hiveCmdLineConfig("test.log.dir", outsideConf.get("test.log.dir")));
         args.add(
                 hiveCmdLineConfig(
-                        METASTORECONNECTURLKEY.varname,
-                        outsideConf.getVar(METASTORECONNECTURLKEY)));
+                        METASTORE_CONNECT_URL_KEY.varname,
+                        outsideConf.getVar(METASTORE_CONNECT_URL_KEY)));
         // config derby.log file
         File derbyLog = File.createTempFile("derby", ".log");
         derbyLog.deleteOnExit();

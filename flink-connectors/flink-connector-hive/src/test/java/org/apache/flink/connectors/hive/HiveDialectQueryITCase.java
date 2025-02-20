@@ -95,7 +95,7 @@ public class HiveDialectQueryITCase {
         hiveCatalog.open();
         tableEnv = getTableEnvWithHiveCatalog();
         tableEnv.getConfig().set(BatchExecutionOptions.ADAPTIVE_AUTO_PARALLELISM_ENABLED, false);
-        warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTOREWAREHOUSE);
+        warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTORE_WAREHOUSE);
 
         // create tables
         tableEnv.executeSql("create table foo (x int, y int)");
@@ -472,7 +472,7 @@ public class HiveDialectQueryITCase {
 
     @Test
     public void testInsertDirectory() throws Exception {
-        String warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTOREWAREHOUSE);
+        String warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTORE_WAREHOUSE);
 
         // test insert overwrite directory with row format parameters
         tableEnv.executeSql("create table map_table (foo STRING , bar MAP<STRING, INT>)");
@@ -593,7 +593,7 @@ public class HiveDialectQueryITCase {
                     CollectionUtil.iteratorToList(
                             tableEnv.executeSql("select * from destp1").collect());
             String defaultPartitionName =
-                    hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.DEFAULTPARTITIONNAME);
+                    hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.DEFAULT_PARTITION_NAME);
             assertThat(result.toString())
                     .isEqualTo(
                             String.format(

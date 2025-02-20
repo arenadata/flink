@@ -78,7 +78,7 @@ public class HiveDynamicPartitionPruningITCase {
                 .setBoolVar(
                         HiveConf.ConfVars.METASTORE_DISALLOW_INCOMPATIBLE_COL_TYPE_CHANGES, false);
         hiveCatalog.open();
-        warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTOREWAREHOUSE);
+        warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTORE_WAREHOUSE);
 
         if (enableAdaptiveBatchScheduler) {
             tableEnv = HiveTestUtils.createTableEnvInBatchModeWithAdaptiveScheduler();

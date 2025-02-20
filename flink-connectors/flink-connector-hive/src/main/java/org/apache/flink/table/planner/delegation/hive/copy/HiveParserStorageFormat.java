@@ -109,9 +109,9 @@ public class HiveParserStorageFormat {
         if (serde == null) {
             // RCFile supports a configurable SerDe
             if (name.equalsIgnoreCase(IOConstants.RCFILE)) {
-                serde = HiveConf.getVar(conf, HiveConf.ConfVars.HIVEDEFAULTRCFILESERDE);
+                serde = HiveConf.getVar(conf, HiveConf.ConfVars.HIVE_DEFAULT_RCFILE_SERDE);
             } else {
-                serde = HiveConf.getVar(conf, HiveConf.ConfVars.HIVEDEFAULTSERDE);
+                serde = HiveConf.getVar(conf, HiveConf.ConfVars.HIVE_DEFAULT_SERDE);
             }
         }
     }
@@ -129,7 +129,7 @@ public class HiveParserStorageFormat {
                                 "hive.materializedview.serde",
                                 "org.apache.hadoop.hive.ql.io.orc.OrcSerde");
             } else {
-                defaultFormat = HiveConf.getVar(conf, HiveConf.ConfVars.HIVEDEFAULTFILEFORMAT);
+                defaultFormat = HiveConf.getVar(conf, HiveConf.ConfVars.HIVE_DEFAULT_FILEFORMAT);
                 defaultManagedFormat = conf.get("hive.default.fileformat.managed", "none");
             }
 
@@ -143,7 +143,7 @@ public class HiveParserStorageFormat {
             } else {
                 processStorageFormat(defaultFormat);
                 if (defaultFormat.equalsIgnoreCase(IOConstants.RCFILE)) {
-                    serde = HiveConf.getVar(conf, HiveConf.ConfVars.HIVEDEFAULTRCFILESERDE);
+                    serde = HiveConf.getVar(conf, HiveConf.ConfVars.HIVE_DEFAULT_RCFILE_SERDE);
                 }
             }
         }

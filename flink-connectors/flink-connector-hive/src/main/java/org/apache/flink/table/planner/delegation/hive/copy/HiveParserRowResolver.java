@@ -243,7 +243,7 @@ public class HiveParserRowResolver implements Serializable {
         return ret;
     }
 
-    public ArrayList<ColumnInfo> getColumnInfos() {
+    public List<ColumnInfo> getColumnInfos() {
         return rowSchema.getSignature();
     }
 

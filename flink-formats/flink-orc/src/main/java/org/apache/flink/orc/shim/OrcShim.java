@@ -62,7 +62,8 @@ public interface OrcShim<BATCH> extends Serializable {
             return new OrcShimV210();
         } else if (hiveVersion.startsWith("2.2")
                 || hiveVersion.startsWith("2.3")
-                || hiveVersion.startsWith("3.")) {
+                || hiveVersion.startsWith("3.")
+                || hiveVersion.startsWith("4.")) {
             return new OrcShimV230();
         } else {
             throw new UnsupportedOperationException(

@@ -24,6 +24,7 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.MemorySize;
+import org.apache.flink.core.testutils.CommonTestUtils;
 import org.apache.flink.runtime.clusterframework.ContaineredTaskManagerParameters;
 import org.apache.flink.runtime.clusterframework.TaskExecutorProcessSpec;
 import org.apache.flink.runtime.clusterframework.TaskExecutorProcessUtils;
@@ -691,13 +692,36 @@ class UtilsTest {
     }
 
     @Test
+    void testGetTaskManagerEnvsWithEnvJavaHomeSet() {
+        final Configuration cfg = new Configuration();
+        final String newJavaHome = "/usr/lib/jvm/java-openjdk-17";
+        final Map<String, String> oldEnv = System.getenv();
+        try {
+            Map<String, String> newEnv = new HashMap<>(System.getenv());
+            newEnv.put(ConfigConstants.ENV_JAVA_HOME, newJavaHome);
+            CommonTestUtils.setEnv(newEnv);
+
+            cfg.setString(CONTAINERIZED_TASK_MANAGER_ENV_PREFIX + "key", "val");
+            final ContaineredTaskManagerParameters containeredParams =
+                    ContaineredTaskManagerParameters.create(cfg, TASK_EXECUTOR_PROCESS_SPEC);
+            final Map<String, String> envVars = containeredParams.taskManagerEnv();
+            assertThat(envVars)
+                    .containsEntry(ENV_JAVA_HOME, newJavaHome)
+                    .containsEntry("key", "val");
+        } finally {
+            CommonTestUtils.setEnv(oldEnv);
+        }
+    }
+
+    @Test
     void testGetTaskManagerEnvsWithoutJavaHomeSet() {
         final Configuration cfg = new Configuration();
+        final String origJavaHome = System.getenv(ConfigConstants.ENV_JAVA_HOME);
         cfg.setString(CONTAINERIZED_TASK_MANAGER_ENV_PREFIX + "key", "val");
         final ContaineredTaskManagerParameters containeredParams =
                 ContaineredTaskManagerParameters.create(cfg, TASK_EXECUTOR_PROCESS_SPEC);
         final Map<String, String> envVars = containeredParams.taskManagerEnv();
-        assertThat(envVars).doesNotContainKey(ENV_JAVA_HOME);
+        assertThat(envVars.get(ConfigConstants.ENV_JAVA_HOME)).isEqualTo(origJavaHome);
     }
 
     private static void verifyUnitResourceVariousSchedulers(

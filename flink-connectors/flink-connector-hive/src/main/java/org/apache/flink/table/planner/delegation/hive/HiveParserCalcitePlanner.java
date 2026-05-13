@@ -61,6 +61,7 @@ import org.apache.flink.util.Preconditions;
 import org.apache.flink.shaded.guava31.com.google.common.collect.ImmutableList;
 
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.ViewExpanders;
 import org.apache.calcite.prepare.CalciteCatalogReader;
@@ -98,6 +99,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexWindowBound;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -107,7 +109,7 @@ import org.apache.calcite.util.CompositeList;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
-import org.apache.hadoop.hive.common.ObjectPair;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.ql.ErrorMsg;
@@ -115,7 +117,7 @@ import org.apache.hadoop.hive.ql.exec.ColumnInfo;
 import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.lib.Node;
 import org.apache.hadoop.hive.ql.metadata.VirtualColumn;
-import org.apache.hadoop.hive.ql.optimizer.calcite.HiveRelOptUtil;
+import org.apache.hadoop.hive.ql.optimizer.calcite.CalciteSemanticException;
 import org.apache.hadoop.hive.ql.parse.ColumnAccessInfo;
 import org.apache.hadoop.hive.ql.parse.JoinType;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
@@ -152,6 +154,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.calcite.plan.RelOptUtil.op;
 import static org.apache.flink.table.planner.delegation.hive.HiveParserUtils.generateErrorMessage;
 import static org.apache.flink.table.planner.delegation.hive.HiveParserUtils.rewriteGroupingFunctionAST;
 import static org.apache.flink.table.planner.delegation.hive.HiveParserUtils.verifyCanHandleAst;
@@ -460,6 +463,242 @@ public class HiveParserCalcitePlanner {
         return setOpRel;
     }
 
+    private static RexNode splitHiveJoinCondition(
+            List<RelDataTypeField> sysFieldList,
+            List<RelNode> inputs,
+            RexNode condition,
+            List<List<RexNode>> joinKeys,
+            List<Integer> filterNulls,
+            List<SqlOperator> rangeOp)
+            throws CalciteSemanticException {
+        final List<RexNode> nonEquiList = new ArrayList<>();
+
+        splitJoinCondition(
+                sysFieldList, inputs, condition, joinKeys, filterNulls, rangeOp, nonEquiList);
+
+        // Convert the remainders into a list that are AND'ed together.
+        return RexUtil.composeConjunction(
+                inputs.get(0).getCluster().getRexBuilder(), nonEquiList, false);
+    }
+
+    private static void splitJoinCondition(
+            List<RelDataTypeField> sysFieldList,
+            List<RelNode> inputs,
+            RexNode condition,
+            List<List<RexNode>> joinKeys,
+            List<Integer> filterNulls,
+            List<SqlOperator> rangeOp,
+            List<RexNode> nonEquiList)
+            throws CalciteSemanticException {
+        final int sysFieldCount = sysFieldList.size();
+        final RelOptCluster cluster = inputs.get(0).getCluster();
+        final RexBuilder rexBuilder = cluster.getRexBuilder();
+
+        if (condition instanceof RexCall) {
+            RexCall call = (RexCall) condition;
+            if (call.getOperator() == SqlStdOperatorTable.AND) {
+                for (RexNode operand : call.getOperands()) {
+                    splitJoinCondition(
+                            sysFieldList,
+                            inputs,
+                            operand,
+                            joinKeys,
+                            filterNulls,
+                            rangeOp,
+                            nonEquiList);
+                }
+                return;
+            }
+
+            RexNode leftKey = null;
+            RexNode rightKey = null;
+            int leftInput = 0;
+            int rightInput = 0;
+            List<RelDataTypeField> leftFields = null;
+            List<RelDataTypeField> rightFields = null;
+            boolean reverse = false;
+
+            SqlKind kind = call.getKind();
+
+            // Only consider range operators if we haven't already seen one
+            if ((kind == SqlKind.EQUALS)
+                    || (filterNulls != null && kind == SqlKind.IS_NOT_DISTINCT_FROM)
+                    || (rangeOp != null
+                            && rangeOp.isEmpty()
+                            && (kind == SqlKind.GREATER_THAN
+                                    || kind == SqlKind.GREATER_THAN_OR_EQUAL
+                                    || kind == SqlKind.LESS_THAN
+                                    || kind == SqlKind.LESS_THAN_OR_EQUAL))) {
+                final List<RexNode> operands = call.getOperands();
+                RexNode op0 = operands.get(0);
+                RexNode op1 = operands.get(1);
+
+                final ImmutableBitSet projRefs0 = RelOptUtil.InputFinder.bits(op0);
+                final ImmutableBitSet projRefs1 = RelOptUtil.InputFinder.bits(op1);
+
+                final ImmutableBitSet[] inputsRange = new ImmutableBitSet[inputs.size()];
+                int totalFieldCount = 0;
+                for (int i = 0; i < inputs.size(); i++) {
+                    final int firstField = totalFieldCount + sysFieldCount;
+                    totalFieldCount = firstField + inputs.get(i).getRowType().getFieldCount();
+                    inputsRange[i] = ImmutableBitSet.range(firstField, totalFieldCount);
+                }
+
+                boolean foundBothInputs = false;
+                for (int i = 0; i < inputs.size() && !foundBothInputs; i++) {
+                    if (projRefs0.intersects(inputsRange[i])
+                            && projRefs0.union(inputsRange[i]).equals(inputsRange[i])) {
+                        if (leftKey == null) {
+                            leftKey = op0;
+                            leftInput = i;
+                            leftFields = inputs.get(leftInput).getRowType().getFieldList();
+                        } else {
+                            rightKey = op0;
+                            rightInput = i;
+                            rightFields = inputs.get(rightInput).getRowType().getFieldList();
+                            reverse = true;
+                            foundBothInputs = true;
+                        }
+                    } else if (projRefs1.intersects(inputsRange[i])
+                            && projRefs1.union(inputsRange[i]).equals(inputsRange[i])) {
+                        if (leftKey == null) {
+                            leftKey = op1;
+                            leftInput = i;
+                            leftFields = inputs.get(leftInput).getRowType().getFieldList();
+                        } else {
+                            rightKey = op1;
+                            rightInput = i;
+                            rightFields = inputs.get(rightInput).getRowType().getFieldList();
+                            foundBothInputs = true;
+                        }
+                    }
+                }
+
+                if ((leftKey != null) && (rightKey != null)) {
+                    // adjustment array
+                    int[] adjustments = new int[totalFieldCount];
+                    for (int i = 0; i < inputs.size(); i++) {
+                        final int adjustment = inputsRange[i].nextSetBit(0);
+                        for (int j = adjustment; j < inputsRange[i].length(); j++) {
+                            adjustments[j] = -adjustment;
+                        }
+                    }
+
+                    // replace right Key input ref
+                    rightKey =
+                            rightKey.accept(
+                                    new RelOptUtil.RexInputConverter(
+                                            rexBuilder, rightFields, rightFields, adjustments));
+
+                    // left key only needs to be adjusted if there are system
+                    // fields, but do it for uniformity
+                    leftKey =
+                            leftKey.accept(
+                                    new RelOptUtil.RexInputConverter(
+                                            rexBuilder, leftFields, leftFields, adjustments));
+
+                    RelDataType leftKeyType = leftKey.getType();
+                    RelDataType rightKeyType = rightKey.getType();
+
+                    if (leftKeyType != rightKeyType) {
+                        // perform casting using Hive rules
+                        TypeInfo rType = HiveParserTypeConverter.convert(rightKeyType);
+                        TypeInfo lType = HiveParserTypeConverter.convert(leftKeyType);
+                        TypeInfo tgtType =
+                                FunctionRegistry.getCommonClassForComparison(lType, rType);
+
+                        if (tgtType == null) {
+                            throw new CalciteSemanticException(
+                                    "Cannot find common type for join keys "
+                                            + leftKey
+                                            + " (type "
+                                            + leftKeyType
+                                            + ") and "
+                                            + rightKey
+                                            + " (type "
+                                            + rightKeyType
+                                            + ")");
+                        }
+                        RelDataType targetKeyType = null;
+                        try {
+                            targetKeyType =
+                                    HiveParserTypeConverter.convert(
+                                            tgtType, rexBuilder.getTypeFactory());
+                        } catch (SemanticException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        if (leftKeyType != targetKeyType
+                                && TypeInfoUtils.isConversionRequiredForComparison(
+                                        tgtType, lType)) {
+                            leftKey = rexBuilder.makeCast(targetKeyType, leftKey);
+                        }
+
+                        if (rightKeyType != targetKeyType
+                                && TypeInfoUtils.isConversionRequiredForComparison(
+                                        tgtType, rType)) {
+                            rightKey = rexBuilder.makeCast(targetKeyType, rightKey);
+                        }
+                    }
+                }
+            }
+
+            if ((leftKey != null) && (rightKey != null)) {
+                // found suitable join keys
+                // add them to key list, ensuring that if there is a
+                // non-equi join predicate, it appears at the end of the
+                // key list; also mark the null filtering property
+                addJoinKey(
+                        joinKeys.get(leftInput), leftKey, (rangeOp != null) && !rangeOp.isEmpty());
+                addJoinKey(
+                        joinKeys.get(rightInput),
+                        rightKey,
+                        (rangeOp != null) && !rangeOp.isEmpty());
+                if (filterNulls != null && kind == SqlKind.EQUALS) {
+                    // nulls are considered not matching for equality comparison
+                    // add the position of the most recently inserted key
+                    filterNulls.add(joinKeys.get(leftInput).size() - 1);
+                }
+                if (rangeOp != null && kind != SqlKind.EQUALS && kind != SqlKind.IS_DISTINCT_FROM) {
+                    if (reverse) {
+                        kind = reverse(kind);
+                    }
+                    rangeOp.add(op(kind, call.getOperator()));
+                }
+                return;
+            } // else fall through and add this condition as nonEqui condition
+        }
+
+        // The operator is not of RexCall type
+        // So we fail. Fall through.
+        // Add this condition to the list of non-equi-join conditions.
+        nonEquiList.add(condition);
+    }
+
+    private static SqlKind reverse(SqlKind kind) {
+        switch (kind) {
+            case GREATER_THAN:
+                return SqlKind.LESS_THAN;
+            case GREATER_THAN_OR_EQUAL:
+                return SqlKind.LESS_THAN_OR_EQUAL;
+            case LESS_THAN:
+                return SqlKind.GREATER_THAN;
+            case LESS_THAN_OR_EQUAL:
+                return SqlKind.GREATER_THAN_OR_EQUAL;
+            default:
+                return kind;
+        }
+    }
+
+    private static void addJoinKey(
+            List<RexNode> joinKeyList, RexNode key, boolean preserveLastElementInList) {
+        if (!joinKeyList.isEmpty() && preserveLastElementInList) {
+            joinKeyList.add(joinKeyList.size() - 1, key);
+        } else {
+            joinKeyList.add(key);
+        }
+    }
+
     private RelNode genJoinRelNode(
             RelNode leftRel,
             String leftTableAlias,
@@ -571,7 +810,7 @@ public class HiveParserCalcitePlanner {
             List<RexNode> rightJoinKeys = new ArrayList<>();
 
             RexNode nonEquiConds =
-                    HiveRelOptUtil.splitHiveJoinCondition(
+                    splitHiveJoinCondition(
                             sysFieldList,
                             Arrays.asList(leftRel, rightRel),
                             joinCondRex,
@@ -950,7 +1189,7 @@ public class HiveParserCalcitePlanner {
 
             HiveParserASTNode subQueryAST = subQueries.get(i);
             // HiveParserSubQueryUtils.rewriteParentQueryWhere(clonedSearchCond, subQueryAST);
-            ObjectPair<Boolean, Integer> subqInfo = new ObjectPair<>(false, 0);
+            MutablePair<Boolean, Integer> subqInfo = new MutablePair<>(false, 0);
             if (!topLevelConjunctCheck(clonedSearchCond, subqInfo)) {
                 // Restriction.7.h :: SubQuery predicates can appear only as top level conjuncts.
                 throw new SemanticException(
@@ -1262,7 +1501,7 @@ public class HiveParserCalcitePlanner {
                         || !qbp.getDestCubes().isEmpty();
 
         // 2. Sanity check
-        if (semanticAnalyzer.getConf().getBoolVar(HiveConf.ConfVars.HIVEGROUPBYSKEW)
+        if (semanticAnalyzer.getConf().getBoolVar(HiveConf.ConfVars.HIVE_GROUPBY_SKEW)
                 && qbp.getDistinctFuncExprsForClause(detsClauseName).size() > 1) {
             throw new SemanticException(ErrorMsg.UNSUPPORTED_MULTIPLE_DISTINCTS.getMsg());
         }
@@ -1611,7 +1850,7 @@ public class HiveParserCalcitePlanner {
             Integer limit = qb.getParseInfo().getDestLimit(dest);
             if (limit == null) {
                 String mapRedMode =
-                        semanticAnalyzer.getConf().getVar(HiveConf.ConfVars.HIVEMAPREDMODE);
+                        semanticAnalyzer.getConf().getVar(HiveConf.ConfVars.HIVE_MAPRED_MODE);
                 boolean banLargeQuery =
                         Boolean.parseBoolean(
                                 semanticAnalyzer

@@ -280,7 +280,7 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
             Class hiveOutputFormatClz =
                     hiveShim.getHiveOutputFormatClass(Class.forName(sd.getOutputFormat()));
             boolean isCompressed =
-                    jobConf.getBoolean(HiveConf.ConfVars.COMPRESSRESULT.varname, false);
+                    jobConf.getBoolean(HiveConf.ConfVars.COMPRESS_RESULT.varname, false);
             HiveWriterFactory writerFactory =
                     new HiveWriterFactory(
                             jobConf,
@@ -323,7 +323,7 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
                             new Path(
                                     HiveConf.getVar(
                                             HiveConfUtils.create(jobConf),
-                                            HiveConf.ConfVars.SCRATCHDIR));
+                                            HiveConf.ConfVars.SCRATCH_DIR));
                     // TODO: may append something more meaningful than a timestamp, like query ID
                     Path scratchDir =
                             new Path(

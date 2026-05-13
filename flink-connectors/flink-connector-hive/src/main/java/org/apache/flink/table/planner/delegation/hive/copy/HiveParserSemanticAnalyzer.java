@@ -63,6 +63,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.QueryProperties;
+import org.apache.hadoop.hive.ql.ddl.view.create.CreateViewDesc;
 import org.apache.hadoop.hive.ql.exec.ColumnInfo;
 import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.exec.Utilities;
@@ -80,7 +81,6 @@ import org.apache.hadoop.hive.ql.parse.PTFInvocationSpec.PTFQueryInputType;
 import org.apache.hadoop.hive.ql.parse.PrunedPartitionList;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.parse.SplitSample;
-import org.apache.hadoop.hive.ql.plan.CreateViewDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDescUtils;
@@ -540,7 +540,7 @@ public class HiveParserSemanticAnalyzer {
                                     (HiveParserASTNode) numerator,
                                     "Sampling percentage should be between 0 and 100"));
                 }
-                int seedNum = conf.getIntVar(ConfVars.HIVESAMPLERANDOMNUM);
+                int seedNum = conf.getIntVar(ConfVars.HIVE_SAMPLE_RANDOM_NUM);
                 sample = new SplitSample(percent, seedNum);
             } else if (type.getType() == HiveASTParser.TOK_ROWCOUNT) {
                 sample = new SplitSample(Integer.parseInt(value));
@@ -555,7 +555,7 @@ public class HiveParserSemanticAnalyzer {
                 } else if (last == 'g' || last == 'G') {
                     length <<= 30;
                 }
-                int seedNum = conf.getIntVar(ConfVars.HIVESAMPLERANDOMNUM);
+                int seedNum = conf.getIntVar(ConfVars.HIVE_SAMPLE_RANDOM_NUM);
                 sample = new SplitSample(length, seedNum);
             }
             String aliasId = getAliasId(alias, qb);
@@ -1120,8 +1120,8 @@ public class HiveParserSemanticAnalyzer {
                     qb.getParseInfo().setNoScanAnalyzeCommand(this.noscan);
                     qb.getParseInfo().setPartialScanAnalyzeCommand(this.partialscan);
                     // Allow analyze the whole table and dynamic partitions
-                    HiveConf.setVar(conf, HiveConf.ConfVars.DYNAMICPARTITIONINGMODE, "nonstrict");
-                    HiveConf.setVar(conf, HiveConf.ConfVars.HIVEMAPREDMODE, "nonstrict");
+                    HiveConf.setVar(conf, ConfVars.DYNAMIC_PARTITIONING_MODE, "nonstrict");
+                    HiveConf.setVar(conf, ConfVars.HIVE_MAPRED_MODE, "nonstrict");
 
                     break;
 
@@ -1781,7 +1781,11 @@ public class HiveParserSemanticAnalyzer {
                         return null;
                     };
             GraphWalker nodeOriginTagger = new HiveParserDefaultGraphWalker(nodeOriginDispatcher);
-            nodeOriginTagger.startWalking(Collections.singleton(viewTree), null);
+            try {
+                nodeOriginTagger.startWalking(Collections.singleton(viewTree), null);
+            } catch (HiveException e) {
+                throw new RuntimeException(e);
+            }
         } catch (HiveASTParseException e) {
             // A user could encounter this if a stored view definition contains
             // an old SQL construct which has been eliminated in a later Hive

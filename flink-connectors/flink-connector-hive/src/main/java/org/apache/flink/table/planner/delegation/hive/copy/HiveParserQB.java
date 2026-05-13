@@ -23,7 +23,7 @@ import org.apache.flink.table.catalog.CatalogView;
 import org.apache.flink.table.catalog.ResolvedCatalogTable;
 import org.apache.flink.table.planner.delegation.hive.HiveParserQBMetaData;
 
-import org.apache.hadoop.hive.ql.plan.CreateTableDesc;
+import org.apache.hadoop.hive.ql.ddl.table.create.CreateTableDesc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

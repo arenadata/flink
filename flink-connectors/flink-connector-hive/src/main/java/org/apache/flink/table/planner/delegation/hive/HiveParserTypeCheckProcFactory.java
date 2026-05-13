@@ -59,10 +59,11 @@ import org.apache.hadoop.hive.ql.lib.DefaultRuleDispatcher;
 import org.apache.hadoop.hive.ql.lib.Dispatcher;
 import org.apache.hadoop.hive.ql.lib.GraphWalker;
 import org.apache.hadoop.hive.ql.lib.Node;
-import org.apache.hadoop.hive.ql.lib.NodeProcessor;
 import org.apache.hadoop.hive.ql.lib.NodeProcessorCtx;
-import org.apache.hadoop.hive.ql.lib.Rule;
 import org.apache.hadoop.hive.ql.lib.RuleRegExp;
+import org.apache.hadoop.hive.ql.lib.SemanticNodeProcessor;
+import org.apache.hadoop.hive.ql.lib.SemanticRule;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.optimizer.ConstantPropagateProcFactory;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
@@ -73,8 +74,8 @@ import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
 import org.apache.hadoop.hive.ql.udf.SettableUDF;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBaseCompare;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDFCoalesce;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFInternalInterval;
-import org.apache.hadoop.hive.ql.udf.generic.GenericUDFNvl;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPAnd;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPDivide;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqual;
@@ -201,7 +202,7 @@ public class HiveParserTypeCheckProcFactory {
         // create a walker which walks the tree in a DFS manner while maintaining
         // the operator stack. The dispatcher
         // generates the plan from the operator tree
-        Map<Rule, NodeProcessor> opRules = new LinkedHashMap<>();
+        Map<SemanticRule, SemanticNodeProcessor> opRules = new LinkedHashMap<>();
 
         opRules.put(new RuleRegExp("R1", HiveASTParser.TOK_NULL + "%"), tf.getNullExprProcessor());
         opRules.put(
@@ -291,7 +292,11 @@ public class HiveParserTypeCheckProcFactory {
         // Create a list of top nodes
         ArrayList<Node> topNodes = new ArrayList<>(Collections.singleton(expr));
         HashMap<Node, Object> nodeOutputs = new LinkedHashMap<>();
-        ogw.startWalking(topNodes, nodeOutputs);
+        try {
+            ogw.startWalking(topNodes, nodeOutputs);
+        } catch (HiveException e) {
+            throw new RuntimeException(e);
+        }
 
         return convert(nodeOutputs);
     }
@@ -311,7 +316,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for processing NULL expression. */
-    public static class NullExprProcessor implements NodeProcessor {
+    public static class NullExprProcessor implements SemanticNodeProcessor {
 
         @Override
         public Object process(
@@ -340,7 +345,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for processing numeric constants. */
-    public static class NumExprProcessor implements NodeProcessor {
+    public static class NumExprProcessor implements SemanticNodeProcessor {
 
         @Override
         public Object process(
@@ -429,7 +434,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for processing string constants. */
-    public static class StrExprProcessor implements NodeProcessor {
+    public static class StrExprProcessor implements SemanticNodeProcessor {
 
         @Override
         public Object process(
@@ -483,7 +488,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for boolean constants. */
-    public static class BoolExprProcessor implements NodeProcessor {
+    public static class BoolExprProcessor implements SemanticNodeProcessor {
 
         @Override
         public Object process(
@@ -523,7 +528,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for date constants. */
-    public static class DateTimeExprProcessor implements NodeProcessor {
+    public static class DateTimeExprProcessor implements SemanticNodeProcessor {
 
         @Override
         public Object process(
@@ -568,7 +573,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for interval constants. */
-    public static class IntervalExprProcessor implements NodeProcessor {
+    public static class IntervalExprProcessor implements SemanticNodeProcessor {
 
         private static final BigDecimal NANOS_PER_SEC_BD =
                 new BigDecimal(HiveParserIntervalUtils.NANOS_PER_SEC);
@@ -666,7 +671,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for table columns. */
-    public static class ColumnExprProcessor implements NodeProcessor {
+    public static class ColumnExprProcessor implements SemanticNodeProcessor {
 
         @Override
         public Object process(
@@ -782,7 +787,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** The default processor for typechecking. */
-    public static class DefaultExprProcessor implements NodeProcessor {
+    public static class DefaultExprProcessor implements SemanticNodeProcessor {
 
         static HashMap<Integer, String> specialUnaryOperatorTextHashMap;
         static HashMap<Integer, String> specialFunctionTextHashMap;
@@ -1218,7 +1223,7 @@ public class HiveParserTypeCheckProcFactory {
                     // Rewrite CASE into NVL
                     desc =
                             ExprNodeGenericFuncDesc.newInstance(
-                                    new GenericUDFNvl(),
+                                    new GenericUDFCoalesce(),
                                     new ArrayList<>(
                                             Arrays.asList(
                                                     children.get(0),
@@ -1694,7 +1699,7 @@ public class HiveParserTypeCheckProcFactory {
     }
 
     /** Processor for subquery expressions.. */
-    public static class SubQueryExprProcessor implements NodeProcessor {
+    public static class SubQueryExprProcessor implements SemanticNodeProcessor {
 
         @Override
         public Object process(

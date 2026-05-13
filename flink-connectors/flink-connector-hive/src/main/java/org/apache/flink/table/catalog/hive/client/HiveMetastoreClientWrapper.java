@@ -234,13 +234,13 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
     public List<ColumnStatisticsObj> getTableColumnStatistics(
             String databaseName, String tableName, List<String> columnNames)
             throws NoSuchObjectException, MetaException, TException {
-        return client.getTableColumnStatistics(databaseName, tableName, columnNames);
+        return client.getTableColumnStatistics(databaseName, tableName, columnNames, "hive");
     }
 
     public Map<String, List<ColumnStatisticsObj>> getPartitionColumnStatistics(
             String dbName, String tableName, List<String> partNames, List<String> colNames)
             throws NoSuchObjectException, MetaException, TException {
-        return client.getPartitionColumnStatistics(dbName, tableName, partNames, colNames);
+        return client.getPartitionColumnStatistics(dbName, tableName, partNames, colNames, "hive");
     }
 
     public boolean updateTableColumnStatistics(ColumnStatistics columnStatistics)

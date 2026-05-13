@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.clusterframework;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.ConfigurationUtils;
 import org.apache.flink.configuration.ResourceManagerOptions;
 
 import java.util.HashMap;
@@ -89,6 +90,9 @@ public class ContaineredTaskManagerParameters implements java.io.Serializable {
                 envVars.put(envVarKey, config.getString(key, null));
             }
         }
+
+        // set JAVA_HOME
+        ConfigurationUtils.setJavaHomeEnv(config, envVars);
 
         // done
         return new ContaineredTaskManagerParameters(taskExecutorProcessSpec, envVars);

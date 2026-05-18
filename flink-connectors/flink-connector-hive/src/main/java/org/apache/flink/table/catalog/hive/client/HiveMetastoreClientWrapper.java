@@ -28,6 +28,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
+import org.apache.hadoop.hive.metastore.client.SynchronizedMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
@@ -86,7 +87,7 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
         client =
                 HiveCatalog.isEmbeddedMetastore(hiveConf)
                         ? createMetastoreClient()
-                        : HiveMetaStoreClient.newSynchronizedClient(createMetastoreClient());
+                        : SynchronizedMetaStoreClient.newSynchronizedClient(createMetastoreClient());
     }
 
     @Override

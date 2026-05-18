@@ -2267,7 +2267,7 @@ public class HiveParserDDLSemanticAnalyzer {
         } else {
             retValue = tblProp;
         }
-        String paraString = HiveConf.getVar(conf, HiveConf.ConfVars.NEWTABLEDEFAULTPARA);
+        String paraString = conf.get("hive.table.parameters.default", "");
         if (paraString != null && !paraString.isEmpty()) {
             for (String keyValuePair : paraString.split(",")) {
                 String[] keyValue = keyValuePair.split("=", 2);

@@ -164,6 +164,14 @@ under the License.
 			</exclusions>
 		</dependency>
 
+		<!-- jcip-annotations was previously a transitive dep from hadoop-common but dropped in Hadoop 3.4+ -->
+		<dependency>
+			<groupId>net.jcip</groupId>
+			<artifactId>jcip-annotations</artifactId>
+			<version>1.0</version>
+			<optional>true</optional>
+		</dependency>
+
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>

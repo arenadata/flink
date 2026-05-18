@@ -22,9 +22,9 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.util.Preconditions;
 
 import org.apache.hadoop.hive.ql.exec.UDF;
-import org.apache.hive.com.esotericsoftware.kryo.Kryo;
-import org.apache.hive.com.esotericsoftware.kryo.io.Input;
-import org.apache.hive.com.esotericsoftware.kryo.io.Output;
+import org.apache.hive.com.esotericsoftware.kryo.kryo5.Kryo;
+import org.apache.hive.com.esotericsoftware.kryo.kryo5.io.Input;
+import org.apache.hive.com.esotericsoftware.kryo.kryo5.io.Output;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

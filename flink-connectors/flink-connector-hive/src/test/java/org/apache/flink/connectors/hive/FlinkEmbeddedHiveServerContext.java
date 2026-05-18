@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HADOOP_BIN;
-import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVESTATSAUTOGATHER;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_AUTHORIZATION_MANAGER;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_CBO_ENABLED;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_CONVERT_JOIN;
@@ -106,7 +105,7 @@ public class FlinkEmbeddedHiveServerContext implements HiveServerContext {
     }
 
     private void configureMiscHiveSettings() {
-        hiveConf.setBoolVar(HIVESTATSAUTOGATHER, false);
+        hiveConf.set("hive.stats.autogather", "false");
 
         // Turn off CBO so we don't depend on calcite
         hiveConf.setBoolVar(HIVE_CBO_ENABLED, false);

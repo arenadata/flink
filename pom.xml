@@ -51,6 +51,10 @@ under the License.
 
 	<repositories>
 		<repository>
+			<id>arenadata</id>
+			<url>https://maven.pkg.github.com/arenadata/*</url>
+		</repository>
+		<repository>
 			<id>repository.jboss.org</id>
 			<url>https://repository.jboss.org/nexus/content/groups/public/</url>
 			<snapshots>
@@ -109,7 +113,7 @@ under the License.
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<flink.hadoop.version>2.10.2</flink.hadoop.version>
+		<flink.hadoop.version>3.4.3.1-4.3.0-0</flink.hadoop.version>
 		<flink.XmxMax>3072m</flink.XmxMax>
 		<!-- XmxMax / forkCountITCase -->
 		<flink.XmxITCase>1536m</flink.XmxITCase>
@@ -174,7 +178,7 @@ under the License.
 			to revisit the impact at that time.
 		-->
 		<minikdc.version>3.2.4</minikdc.version>
-		<hive.version>4.0.1</hive.version>
+		<hive.version>4.3.0.1-4.3.0-0</hive.version>
 		<orc.version>1.5.6</orc.version>
 		<japicmp.referenceVersion>1.20.3</japicmp.referenceVersion>
 		<japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>

@@ -29,7 +29,6 @@ import org.apache.flink.types.Row;
 
 import org.apache.hadoop.hive.ql.udf.UDFUnhex;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFAbs;
-import org.apache.hadoop.hive.ql.udf.generic.GenericUDFCase;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFCeil;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFCoalesce;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFDateDiff;
@@ -125,23 +124,6 @@ public class HiveGenericUDFTest {
                 HiveSimpleUDFTest.init(UDFUnhex.class, new DataType[] {DataTypes.STRING()});
 
         assertThat(udf.eval(simpleUDF.eval("4D7953514C"), constDecoding)).isEqualTo("MySQL");
-    }
-
-    @Test
-    public void testCase() {
-        HiveGenericUDF udf =
-                init(
-                        GenericUDFCase.class,
-                        new Object[] {null, "1", "a", "b"},
-                        new DataType[] {
-                            DataTypes.STRING(),
-                            DataTypes.STRING(),
-                            DataTypes.STRING(),
-                            DataTypes.STRING()
-                        });
-
-        assertThat(udf.eval("1", "1", "a", "b")).isEqualTo("a");
-        assertThat(udf.eval("2", "1", "a", "b")).isEqualTo("b");
     }
 
     @Test

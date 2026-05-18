@@ -66,6 +66,8 @@ env:
   MAVEN_ARGS: -Dmaven.repo.local=/root/.m2/repository
   # required by tools/azure-pipelines/cache_docker_images.sh
   DOCKER_IMAGES_CACHE_FOLDER: /root/.docker-cache
+  # required for downloading packages from GitHub Packages (maven.pkg.github.com/arenadata/*)
+  GITHUB_TOKEN: ${{ github.token }}
 
 jobs:
   compile:

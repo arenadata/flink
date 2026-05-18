@@ -29,7 +29,7 @@ jobs:
     name: "Pre-compile Checks"
     uses: ./.github/workflows/template.pre-compile-checks.yml
   ci:
-    name: "Default (Java 8)"
+    name: "Default (Java 21)"
     uses: ./.github/workflows/template.flink-ci.yml
     with:
       environment: 'PROFILE="-Dinclude_hadoop_aws"'

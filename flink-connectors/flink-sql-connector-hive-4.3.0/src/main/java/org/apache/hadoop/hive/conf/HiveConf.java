@@ -7250,8 +7250,8 @@ public class HiveConf extends Configuration {
    * @return A HiveConf wrapping on the original configuration
    */
   public static HiveConf cloneConf(Configuration configuration) {
-    if (configuration instanceof HiveConf config) {
-      return new HiveConf(config);
+    if (configuration instanceof HiveConf) {
+      return new HiveConf((HiveConf) configuration);
     } else {
       return new HiveConf(configuration);
     }

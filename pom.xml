@@ -66,6 +66,13 @@ under the License.
 		</repository>
 	</repositories>
 
+	<distributionManagement>
+		<repository>
+			<id>arenadata</id>
+			<url>https://maven.pkg.github.com/arenadata/flink</url>
+		</repository>
+	</distributionManagement>
+
 	<modules>
 		<module>flink-annotations</module>
 		<module>flink-architecture-tests</module>

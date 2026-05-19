@@ -888,10 +888,11 @@ public abstract class YarnTestBase {
             miniDFSCluster = new MiniDFSCluster.Builder(hdfsConfiguration).numDataNodes(2).build();
             miniDFSCluster.waitClusterUp();
 
-            // Hadoop 3.4+ may create /tmp with restrictive permissions; YARN staging dirs
-            // (created as 'mapred' user) need world-write access on /tmp.
+            // Hadoop 3.4+ creates /tmp with drwxr-xr-x; YARN staging dirs (created as 'mapred')
+            // need world-write. mkdirs() applies umask so use setPermission() to force 1777.
             FileSystem fs = miniDFSCluster.getFileSystem();
-            fs.mkdirs(new Path("/tmp"), new FsPermission((short) 01777));
+            fs.mkdirs(new Path("/tmp"));
+            fs.setPermission(new Path("/tmp"), new FsPermission((short) 01777));
 
             hdfsConfiguration = miniDFSCluster.getConfiguration(0);
             writeHDFSSiteConfigXML(hdfsConfiguration, targetTestClassesFolder);

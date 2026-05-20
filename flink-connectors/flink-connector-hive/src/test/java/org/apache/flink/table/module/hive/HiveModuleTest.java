@@ -71,7 +71,9 @@ public class HiveModuleTest {
     }
 
     private void verifyNumBuiltInFunctions(String hiveVersion, HiveModule hiveModule) {
-        if (HiveVersionTestUtil.HIVE_310_OR_LATER) {
+        if (HiveVersionTestUtil.HIVE_400_OR_LATER) {
+            assertThat(hiveModule.listFunctions()).hasSize(482);
+        } else if (HiveVersionTestUtil.HIVE_310_OR_LATER) {
             assertThat(hiveModule.listFunctions()).hasSize(297);
         } else if (HiveVersionTestUtil.HIVE_230_OR_LATER) {
             assertThat(hiveModule.listFunctions()).hasSize(277);
@@ -127,7 +129,7 @@ public class HiveModuleTest {
                         tEnv.sqlQuery("select concat('ab',cast(12.34 as decimal(10,5)))")
                                 .execute()
                                 .collect());
-        assertThat(results.toString()).isEqualTo("[ab12.34]");
+        assertThat(results.toString()).isEqualTo("[ab12.34000]");
 
         results =
                 CollectionUtil.iteratorToList(

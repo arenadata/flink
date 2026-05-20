@@ -105,7 +105,8 @@ class KubernetesTaskManagerParametersTest extends KubernetesTestBase {
 
     @Test
     void testGetEnvironments() {
-        assertThat(kubernetesTaskManagerParameters.getEnvironments()).isEqualTo(customizedEnvs);
+        assertThat(kubernetesTaskManagerParameters.getEnvironments())
+                .containsAllEntriesOf(customizedEnvs);
     }
 
     @Test

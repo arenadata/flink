@@ -921,11 +921,14 @@ class YarnClusterDescriptorTest {
         final String fakeLocalFlinkJar = "./lib/flink_dist.jar";
         final String fakeClassPath = fakeLocalFlinkJar + ":./usrlib/user.jar";
         final ApplicationId appId = ApplicationId.newInstance(0, 0);
+        final Configuration flinkConfig = new Configuration();
+        flinkConfig.set(CoreOptions.FLINK_JAVA_HOME, "/opt/jdk");
         final Map<String, String> masterEnv =
                 getTestMasterEnv(
-                        new Configuration(), flinkHomeDir, fakeClassPath, fakeLocalFlinkJar, appId);
+                        flinkConfig, flinkHomeDir, fakeClassPath, fakeLocalFlinkJar, appId);
 
         assertThat(masterEnv)
+                .containsEntry(ConfigConstants.ENV_JAVA_HOME, "/opt/jdk")
                 .containsEntry(ConfigConstants.ENV_FLINK_LIB_DIR, "./lib")
                 .containsEntry(YarnConfigKeys.ENV_APP_ID, appId.toString())
                 .containsEntry(
@@ -938,6 +941,44 @@ class YarnClusterDescriptorTest {
         assertThat(masterEnv)
                 .containsEntry(YarnConfigKeys.FLINK_DIST_JAR, fakeLocalFlinkJar)
                 .containsEntry(YarnConfigKeys.ENV_CLIENT_HOME_DIR, flinkHomeDir.getPath());
+    }
+
+    @Test
+    public void testContainerEnvJavaHomeNotOverriddenByDefault(@TempDir File flinkHomeDir)
+            throws IOException {
+        final Configuration flinkConfig = new Configuration();
+        final String origJavaHome = System.getenv(ConfigConstants.ENV_JAVA_HOME);
+        final Map<String, String> masterEnv =
+                getTestMasterEnv(
+                        flinkConfig,
+                        flinkHomeDir,
+                        "",
+                        "./lib/flink_dist.jar",
+                        ApplicationId.newInstance(0, 0));
+        assertThat(masterEnv.get(ConfigConstants.ENV_JAVA_HOME)).isEqualTo(origJavaHome);
+    }
+
+    @Test
+    public void testContainerEnvJavaHomeNewValue(@TempDir File flinkHomeDir) throws IOException {
+        final Configuration flinkConfig = new Configuration();
+        final String newJavaHome = "/usr/lib/jvm/java-openjdk-17";
+        final Map<String, String> oldEnv = System.getenv();
+
+        try {
+            Map<String, String> newEnv = new HashMap<>(System.getenv());
+            newEnv.put(ConfigConstants.ENV_JAVA_HOME, newJavaHome);
+            CommonTestUtils.setEnv(newEnv);
+            final Map<String, String> masterEnv =
+                    getTestMasterEnv(
+                            flinkConfig,
+                            flinkHomeDir,
+                            "",
+                            "./lib/flink_dist.jar",
+                            ApplicationId.newInstance(0, 0));
+            assertThat(masterEnv.get(ConfigConstants.ENV_JAVA_HOME)).isEqualTo(newJavaHome);
+        } finally {
+            CommonTestUtils.setEnv(oldEnv);
+        }
     }
 
     @Test

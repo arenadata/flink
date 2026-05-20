@@ -20,7 +20,15 @@ name: "Flink CI (beta)"
 
 on:
   push:
-  workflow_dispatch:
+    branches:
+      - master
+      - develop/**
+      - release/**
+  pull_request:
+    branches:
+      - master
+      - develop/**
+      - release/**
 
 permissions: read-all
 

@@ -36,6 +36,10 @@ on:
 
 permissions: read-all
 
+env:
+  # required for downloading packages from GitHub Packages (maven.pkg.github.com/arenadata/*)
+  GITHUB_TOKEN: ${{ github.token }}
+
 # This workflow should only contain steps that do not require the compilation of Flink (and therefore, are
 # independent of the used JDK)
 jobs:

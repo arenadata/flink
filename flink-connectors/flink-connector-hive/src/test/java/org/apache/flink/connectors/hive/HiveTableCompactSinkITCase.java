@@ -59,7 +59,7 @@ class HiveTableCompactSinkITCase {
     void setUp() {
         hiveCatalog = HiveTestUtils.createHiveCatalog();
         hiveCatalog.open();
-        warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTOREWAREHOUSE);
+        warehouse = hiveCatalog.getHiveConf().getVar(HiveConf.ConfVars.METASTORE_WAREHOUSE);
         tableEnv = HiveTestUtils.createTableEnvInBatchMode(SqlDialect.HIVE);
         tableEnv.registerCatalog(hiveCatalog.getName(), hiveCatalog);
         tableEnv.useCatalog(hiveCatalog.getName());

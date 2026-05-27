@@ -27,7 +27,6 @@ import org.apache.flink.util.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
@@ -48,6 +47,7 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.api.TxnAbortedException;
 import org.apache.hadoop.hive.metastore.api.TxnOpenException;
 import org.apache.hadoop.hive.metastore.api.UnknownDBException;
+import org.apache.hadoop.hive.metastore.client.SynchronizedMetaStoreClient;
 import org.apache.hadoop.hive.metastore.partition.spec.PartitionSpecProxy;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -86,7 +86,8 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
         client =
                 HiveCatalog.isEmbeddedMetastore(hiveConf)
                         ? createMetastoreClient()
-                        : HiveMetaStoreClient.newSynchronizedClient(createMetastoreClient());
+                        : SynchronizedMetaStoreClient.newSynchronizedClient(
+                                createMetastoreClient());
     }
 
     @Override
@@ -234,13 +235,13 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
     public List<ColumnStatisticsObj> getTableColumnStatistics(
             String databaseName, String tableName, List<String> columnNames)
             throws NoSuchObjectException, MetaException, TException {
-        return client.getTableColumnStatistics(databaseName, tableName, columnNames);
+        return client.getTableColumnStatistics(databaseName, tableName, columnNames, "hive");
     }
 
     public Map<String, List<ColumnStatisticsObj>> getPartitionColumnStatistics(
             String dbName, String tableName, List<String> partNames, List<String> colNames)
             throws NoSuchObjectException, MetaException, TException {
-        return client.getPartitionColumnStatistics(dbName, tableName, partNames, colNames);
+        return client.getPartitionColumnStatistics(dbName, tableName, partNames, colNames, "hive");
     }
 
     public boolean updateTableColumnStatistics(ColumnStatistics columnStatistics)

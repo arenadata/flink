@@ -30,16 +30,14 @@ import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.SkewedInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.ql.metadata.Table;
-import org.apache.hadoop.hive.ql.parse.BaseSemanticAnalyzer;
+import org.apache.hadoop.hive.ql.util.DirectionUtils;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hive.common.util.HiveStringUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static org.apache.hadoop.hive.metastore.api.hive_metastoreConstants.META_TABLE_STORAGE;
 
@@ -149,10 +147,9 @@ public class HiveShowTableUtils {
                     List<String> sortKeys = new ArrayList<String>();
                     for (Order sortCol : sortCols) {
                         String sortKeyDesc = "  " + sortCol.getCol() + " ";
-                        if (sortCol.getOrder() == BaseSemanticAnalyzer.HIVE_COLUMN_ORDER_ASC) {
+                        if (sortCol.getOrder() == DirectionUtils.ASCENDING_CODE) {
                             sortKeyDesc = sortKeyDesc + "ASC";
-                        } else if (sortCol.getOrder()
-                                == BaseSemanticAnalyzer.HIVE_COLUMN_ORDER_DESC) {
+                        } else if (sortCol.getOrder() == DirectionUtils.DESCENDING_CODE) {
                             sortKeyDesc = sortKeyDesc + "DESC";
                         }
                         sortKeys.add(sortKeyDesc);
@@ -235,9 +232,7 @@ public class HiveShowTableUtils {
             }
 
             // Table properties
-            duplicateProps.addAll(
-                    Arrays.stream(StatsSetupConst.TABLE_PARAMS_STATS_KEYS)
-                            .collect(Collectors.toList()));
+            duplicateProps.addAll(StatsSetupConst.TABLE_PARAMS_STATS_KEYS);
             String tblProperties = propertiesToString(tbl.getParameters(), duplicateProps);
             createTabStringBuilder.append(String.format("TBLPROPERTIES (\n%s)\n", tblProperties));
             showCreateTableString = createTabStringBuilder.toString();

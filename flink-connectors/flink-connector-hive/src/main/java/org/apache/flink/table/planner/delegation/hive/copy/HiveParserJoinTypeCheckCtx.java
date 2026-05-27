@@ -57,7 +57,9 @@ public class HiveParserJoinTypeCheckCtx extends HiveParserTypeCheckCtx {
         this.inputRRLst = Arrays.asList(leftRR, rightRR);
     }
 
-    /** @return the inputRR List */
+    /**
+     * @return the inputRR List
+     */
     public List<HiveParserRowResolver> getInputRRList() {
         return inputRRLst;
     }

@@ -341,7 +341,7 @@ public class HiveParserRexNodeConverter {
             case LONG:
                 calciteLiteral = rexBuilder.makeBigintLiteral(new BigDecimal((Long) value));
                 break;
-                // TODO: is Decimal an exact numeric or approximate numeric?
+            // TODO: is Decimal an exact numeric or approximate numeric?
             case DECIMAL:
                 if (value instanceof HiveDecimal) {
                     value = ((HiveDecimal) value).bigDecimalValue();

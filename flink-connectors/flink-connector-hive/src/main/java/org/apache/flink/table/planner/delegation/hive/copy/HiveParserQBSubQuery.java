@@ -61,8 +61,8 @@ public class HiveParserQBSubQuery {
             }
 
             switch (opNode.getType()) {
-                    // opNode's type is always either KW_EXISTS or KW_IN never NOTEXISTS or NOTIN
-                    //  to figure this out we need to check it's grand parent's parent
+                // opNode's type is always either KW_EXISTS or KW_IN never NOTEXISTS or NOTIN
+                //  to figure this out we need to check it's grand parent's parent
                 case HiveASTParser.KW_EXISTS:
                     if (opNode.getParent().getParent().getParent() != null
                             && opNode.getParent().getParent().getParent().getType()

@@ -1193,11 +1193,9 @@ public class HiveParserDDLSemanticAnalyzer {
         if (uniqueConstraint != null) {
             notNullColSet.addAll(uniqueConstraint.getColumns());
         }
-        Schema schema =
-                HiveTableUtil.createSchema(cols, partCols, notNullColSet, uniqueConstraint);
+        Schema schema = HiveTableUtil.createSchema(cols, partCols, notNullColSet, uniqueConstraint);
         ResolvedSchema resolvedSchema =
-                HiveTableUtil.createResolvedSchema(
-                        cols, partCols, notNullColSet, uniqueConstraint);
+                HiveTableUtil.createResolvedSchema(cols, partCols, notNullColSet, uniqueConstraint);
         ResolvedCatalogTable catalogTable =
                 new ResolvedCatalogTable(
                         CatalogTable.of(

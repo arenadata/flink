@@ -67,7 +67,7 @@ public class HiveMinAggFunction extends HiveDeclarativeAggregateFunction {
     @Override
     public Expression[] accumulateExpressions() {
         return new Expression[] {
-            /* min = */ ifThenElse(
+            /* min= */ ifThenElse(
                     isNull(operand(0)),
                     min,
                     ifThenElse(
@@ -85,7 +85,7 @@ public class HiveMinAggFunction extends HiveDeclarativeAggregateFunction {
     @Override
     public Expression[] mergeExpressions() {
         return new Expression[] {
-            /* min = */ ifThenElse(
+            /* min= */ ifThenElse(
                     isNull(mergeOperand(min)),
                     min,
                     ifThenElse(

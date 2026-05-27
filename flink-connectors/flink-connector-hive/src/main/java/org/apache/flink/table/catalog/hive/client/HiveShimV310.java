@@ -434,8 +434,11 @@ public class HiveShimV310 extends HiveShimV239 {
 
     List<Object> createHiveNNs(
             Table table, Configuration conf, List<String> nnCols, List<Byte> traits)
-            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
-                    IllegalAccessException, InstantiationException {
+            throws ClassNotFoundException,
+                    NoSuchMethodException,
+                    InvocationTargetException,
+                    IllegalAccessException,
+                    InstantiationException {
         List<Object> res = new ArrayList<>();
         if (!nnCols.isEmpty()) {
             Preconditions.checkArgument(

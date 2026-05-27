@@ -39,12 +39,16 @@ public class HiveParserASTNodeOrigin {
         this.usageNode = usageNode;
     }
 
-    /** @return the type of the object from which an HiveParserASTNode originated, e.g. "view". */
+    /**
+     * @return the type of the object from which an HiveParserASTNode originated, e.g. "view".
+     */
     public String getObjectType() {
         return objectType;
     }
 
-    /** @return the name of the object from which an HiveParserASTNode originated, e.g. "v". */
+    /**
+     * @return the name of the object from which an HiveParserASTNode originated, e.g. "v".
+     */
     public String getObjectName() {
         return objectName;
     }

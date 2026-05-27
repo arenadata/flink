@@ -58,13 +58,13 @@ public class HiveMaxAggFunction extends HiveDeclarativeAggregateFunction {
 
     @Override
     public Expression[] initialValuesExpressions() {
-        return new Expression[] {/* max = */ nullOf(getResultType())};
+        return new Expression[] {/* max= */ nullOf(getResultType())};
     }
 
     @Override
     public Expression[] accumulateExpressions() {
         return new Expression[] {
-            /* max = */ ifThenElse(
+            /* max= */ ifThenElse(
                     isNull(operand(0)),
                     max,
                     ifThenElse(
@@ -82,7 +82,7 @@ public class HiveMaxAggFunction extends HiveDeclarativeAggregateFunction {
     @Override
     public Expression[] mergeExpressions() {
         return new Expression[] {
-            /* max = */ ifThenElse(
+            /* max= */ ifThenElse(
                     isNull(mergeOperand(max)),
                     max,
                     ifThenElse(

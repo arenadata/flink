@@ -170,8 +170,11 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
     }
 
     public void createTable(Table table)
-            throws AlreadyExistsException, InvalidObjectException, MetaException,
-                    NoSuchObjectException, TException {
+            throws AlreadyExistsException,
+                    InvalidObjectException,
+                    MetaException,
+                    NoSuchObjectException,
+                    TException {
         client.createTable(table);
     }
 
@@ -222,8 +225,11 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
     }
 
     public void dropFunction(String databaseName, String functionName)
-            throws MetaException, NoSuchObjectException, InvalidObjectException,
-                    InvalidInputException, TException {
+            throws MetaException,
+                    NoSuchObjectException,
+                    InvalidObjectException,
+                    InvalidInputException,
+                    TException {
         client.dropFunction(databaseName, functionName);
     }
 
@@ -245,13 +251,19 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
     }
 
     public boolean updateTableColumnStatistics(ColumnStatistics columnStatistics)
-            throws NoSuchObjectException, InvalidObjectException, MetaException, TException,
+            throws NoSuchObjectException,
+                    InvalidObjectException,
+                    MetaException,
+                    TException,
                     InvalidInputException {
         return client.updateTableColumnStatistics(columnStatistics);
     }
 
     public boolean updatePartitionColumnStatistics(ColumnStatistics columnStatistics)
-            throws NoSuchObjectException, InvalidObjectException, MetaException, TException,
+            throws NoSuchObjectException,
+                    InvalidObjectException,
+                    MetaException,
+                    TException,
                     InvalidInputException {
         return client.updatePartitionColumnStatistics(columnStatistics);
     }

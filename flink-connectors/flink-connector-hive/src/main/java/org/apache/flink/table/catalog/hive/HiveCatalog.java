@@ -817,8 +817,10 @@ public class HiveCatalog extends AbstractCatalog {
             CatalogPartitionSpec partitionSpec,
             CatalogPartition partition,
             boolean ignoreIfExists)
-            throws TableNotExistException, TableNotPartitionedException,
-                    PartitionSpecInvalidException, PartitionAlreadyExistsException,
+            throws TableNotExistException,
+                    TableNotPartitionedException,
+                    PartitionSpecInvalidException,
+                    PartitionAlreadyExistsException,
                     CatalogException {
         checkNotNull(tablePath, "Table path cannot be null");
         checkNotNull(partitionSpec, "CatalogPartitionSpec cannot be null");
@@ -909,8 +911,10 @@ public class HiveCatalog extends AbstractCatalog {
     @Override
     public List<CatalogPartitionSpec> listPartitions(
             ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
-            throws TableNotExistException, TableNotPartitionedException,
-                    PartitionSpecInvalidException, CatalogException {
+            throws TableNotExistException,
+                    TableNotPartitionedException,
+                    PartitionSpecInvalidException,
+                    CatalogException {
         checkNotNull(tablePath, "Table path cannot be null");
         checkNotNull(partitionSpec, "CatalogPartitionSpec cannot be null");
 

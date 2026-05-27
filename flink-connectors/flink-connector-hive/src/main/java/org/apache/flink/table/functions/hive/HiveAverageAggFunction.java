@@ -76,7 +76,7 @@ public class HiveAverageAggFunction extends HiveDeclarativeAggregateFunction {
 
     @Override
     public Expression[] initialValuesExpressions() {
-        return new Expression[] {/* sum = */ sumInitialValue(), /* count = */ literal(0L)};
+        return new Expression[] {/* sum= */ sumInitialValue(), /* count= */ literal(0L)};
     }
 
     @Override
@@ -84,11 +84,11 @@ public class HiveAverageAggFunction extends HiveDeclarativeAggregateFunction {
         // cast the operand to sum needed type
         Expression tryCastOperand = tryCast(operand(0), typeLiteral(getBufferedSumType()));
         return new Expression[] {
-            /* sum = */ ifThenElse(
+            /* sum= */ ifThenElse(
                     isNull(tryCastOperand),
                     sum,
                     adjustedPlus(getBufferedSumType(), sum, tryCastOperand)),
-            /* count = */ ifThenElse(isNull(tryCastOperand), count, plus(count, literal(1L))),
+            /* count= */ ifThenElse(isNull(tryCastOperand), count, plus(count, literal(1L))),
         };
     }
 
@@ -100,8 +100,8 @@ public class HiveAverageAggFunction extends HiveDeclarativeAggregateFunction {
     @Override
     public Expression[] mergeExpressions() {
         return new Expression[] {
-            /* sum = */ adjustedPlus(getBufferedSumType(), sum, mergeOperand(sum)),
-            /* count = */ plus(count, mergeOperand(count))
+            /* sum= */ adjustedPlus(getBufferedSumType(), sum, mergeOperand(sum)),
+            /* count= */ plus(count, mergeOperand(count))
         };
     }
 

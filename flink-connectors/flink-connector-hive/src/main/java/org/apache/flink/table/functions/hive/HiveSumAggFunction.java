@@ -74,7 +74,7 @@ public class HiveSumAggFunction extends HiveDeclarativeAggregateFunction {
 
     @Override
     public Expression[] initialValuesExpressions() {
-        return new Expression[] {/* sum = */ nullOf(getResultType()), valueLiteral(true)};
+        return new Expression[] {/* sum= */ nullOf(getResultType()), valueLiteral(true)};
     }
 
     @Override
@@ -82,7 +82,7 @@ public class HiveSumAggFunction extends HiveDeclarativeAggregateFunction {
         Expression tryCastOperand = tryCast(operand(0), typeLiteral(getResultType()));
         Expression coalesceSum = coalesce(sum, zero);
         return new Expression[] {
-            /* sum = */ ifThenElse(
+            /* sum= */ ifThenElse(
                     isNull(tryCastOperand),
                     coalesceSum,
                     adjustedPlus(getResultType(), coalesceSum, tryCastOperand)),
@@ -99,7 +99,7 @@ public class HiveSumAggFunction extends HiveDeclarativeAggregateFunction {
     public Expression[] mergeExpressions() {
         Expression coalesceSum = coalesce(sum, zero);
         return new Expression[] {
-            /* sum = */ ifThenElse(
+            /* sum= */ ifThenElse(
                     isNull(mergeOperand(sum)),
                     coalesceSum,
                     adjustedPlus(getResultType(), coalesceSum, mergeOperand(sum))),

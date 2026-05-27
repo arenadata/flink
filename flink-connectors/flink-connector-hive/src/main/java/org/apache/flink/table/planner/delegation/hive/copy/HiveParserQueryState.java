@@ -28,6 +28,7 @@ import java.util.Map;
 public class HiveParserQueryState {
     /** current configuration. */
     private final HiveConf queryConf;
+
     /** type of the command. */
     private HiveOperation commandType;
 

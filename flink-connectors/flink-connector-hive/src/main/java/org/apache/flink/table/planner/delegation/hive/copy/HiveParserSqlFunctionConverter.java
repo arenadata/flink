@@ -399,9 +399,9 @@ public class HiveParserSqlFunctionConverter {
         SqlOperator calciteOp;
         CalciteUDFInfo uInf = getUDFInfo(hiveUdfName, calciteArgTypes, calciteRetType);
         switch (hiveUdfName) {
-                // Follow hive's rules for type inference as oppose to Calcite's
-                // for return type.
-                // TODO: Perhaps we should do this for all functions, not just +,-
+            // Follow hive's rules for type inference as oppose to Calcite's
+            // for return type.
+            // TODO: Perhaps we should do this for all functions, not just +,-
             case "-":
                 calciteOp =
                         new SqlMonotonicBinaryOperator(

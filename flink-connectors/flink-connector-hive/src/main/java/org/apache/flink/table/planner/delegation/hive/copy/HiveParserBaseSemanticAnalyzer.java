@@ -690,8 +690,8 @@ public class HiveParserBaseSemanticAnalyzer {
                     case '\\':
                         sb.append("\\");
                         break;
-                        // The following 2 lines are exactly what MySQL does TODO: why do we do
-                        // this?
+                    // The following 2 lines are exactly what MySQL does TODO: why do we do
+                    // this?
                     case '%':
                         sb.append("\\%");
                         break;

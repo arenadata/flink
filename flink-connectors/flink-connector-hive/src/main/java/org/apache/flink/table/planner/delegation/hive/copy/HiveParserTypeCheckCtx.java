@@ -149,57 +149,79 @@ public class HiveParserTypeCheckCtx implements NodeProcessorCtx {
         this.cluster = cluster;
     }
 
-    /** @param inputRR the inputRR to set */
+    /**
+     * @param inputRR the inputRR to set
+     */
     public void setInputRR(HiveParserRowResolver inputRR) {
         this.inputRR = inputRR;
     }
 
-    /** @return the inputRR */
+    /**
+     * @return the inputRR
+     */
     public HiveParserRowResolver getInputRR() {
         return inputRR;
     }
 
-    /** @param outerRR the outerRR to set */
+    /**
+     * @param outerRR the outerRR to set
+     */
     public void setOuterRR(HiveParserRowResolver outerRR) {
         this.outerRR = outerRR;
     }
 
-    /** @return the outerRR */
+    /**
+     * @return the outerRR
+     */
     public HiveParserRowResolver getOuterRR() {
         return outerRR;
     }
 
-    /** @param subqueryToRelNode the subqueryToRelNode to set */
+    /**
+     * @param subqueryToRelNode the subqueryToRelNode to set
+     */
     public void setSubqueryToRelNode(Map<HiveParserASTNode, RelNode> subqueryToRelNode) {
         this.subqueryToRelNode = subqueryToRelNode;
     }
 
-    /** @return the outerRR */
+    /**
+     * @return the outerRR
+     */
     public Map<HiveParserASTNode, RelNode> getSubqueryToRelNode() {
         return subqueryToRelNode;
     }
 
-    /** @param unparseTranslator the unparseTranslator to set */
+    /**
+     * @param unparseTranslator the unparseTranslator to set
+     */
     public void setUnparseTranslator(HiveParserUnparseTranslator unparseTranslator) {
         this.unparseTranslator = unparseTranslator;
     }
 
-    /** @return the unparseTranslator */
+    /**
+     * @return the unparseTranslator
+     */
     public HiveParserUnparseTranslator getUnparseTranslator() {
         return unparseTranslator;
     }
 
-    /** @param allowStatefulFunctions whether to allow stateful UDF invocations */
+    /**
+     * @param allowStatefulFunctions whether to allow stateful UDF invocations
+     */
     public void setAllowStatefulFunctions(boolean allowStatefulFunctions) {
         this.allowStatefulFunctions = allowStatefulFunctions;
     }
 
-    /** @return whether to allow stateful UDF invocations */
+    /**
+     * @return whether to allow stateful UDF invocations
+     */
     public boolean getAllowStatefulFunctions() {
         return allowStatefulFunctions;
     }
 
-    /** @param error the error to set */
+    /**
+     * @param error the error to set
+     */
     public void setError(String error, HiveParserASTNode errorSrcNode) {
         if (LOG.isDebugEnabled()) {
             // Logger the callstack from which the error has been set.
@@ -214,7 +236,9 @@ public class HiveParserTypeCheckCtx implements NodeProcessorCtx {
         this.errorSrcNode = errorSrcNode;
     }
 
-    /** @return the error */
+    /**
+     * @return the error
+     */
     public String getError() {
         return error;
     }

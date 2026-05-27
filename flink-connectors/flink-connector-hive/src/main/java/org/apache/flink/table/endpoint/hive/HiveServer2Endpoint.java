@@ -808,6 +808,7 @@ public class HiveServer2Endpoint implements TCLIService.Iface, SqlGatewayEndpoin
     public TDownloadDataResp DownloadData(TDownloadDataReq tDownloadDataReq) throws TException {
         return null;
     }
+
     // CHECKSTYLE.ON: MethodName
 
     @Override

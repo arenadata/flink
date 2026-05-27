@@ -905,7 +905,7 @@ public class HiveParserSemanticAnalyzer {
             switch (ast.getToken().getType()) {
                 case HiveASTParser.TOK_SELECTDI:
                     qb.countSelDi();
-                    // fall through
+                // fall through
                 case HiveASTParser.TOK_SELECT:
                     qb.countSel();
                     qbp.setSelExprForClause(ctx1.dest, ast);

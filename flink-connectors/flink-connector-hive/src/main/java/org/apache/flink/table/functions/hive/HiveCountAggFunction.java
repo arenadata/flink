@@ -63,14 +63,14 @@ public class HiveCountAggFunction extends HiveDeclarativeAggregateFunction {
 
     @Override
     public Expression[] initialValuesExpressions() {
-        return new Expression[] {/* count = */ literal(0L, getResultType().notNull())};
+        return new Expression[] {/* count= */ literal(0L, getResultType().notNull())};
     }
 
     @Override
     public Expression[] accumulateExpressions() {
         // count(*) and count(literal) mean that count all elements
         if (arguments == 0 || countLiteral) {
-            return new Expression[] {/* count = */ plus(count, literal(1L))};
+            return new Expression[] {/* count= */ plus(count, literal(1L))};
         }
 
         // other case need to determine the value of the element
@@ -84,7 +84,7 @@ public class HiveCountAggFunction extends HiveDeclarativeAggregateFunction {
                         .reduce(ExpressionBuilder::or)
                         .get();
         return new Expression[] {
-            /* count = */ ifThenElse(operandExpression, count, plus(count, literal(1L)))
+            /* count= */ ifThenElse(operandExpression, count, plus(count, literal(1L)))
         };
     }
 
@@ -95,7 +95,7 @@ public class HiveCountAggFunction extends HiveDeclarativeAggregateFunction {
 
     @Override
     public Expression[] mergeExpressions() {
-        return new Expression[] {/* count = */ plus(count, mergeOperand(count))};
+        return new Expression[] {/* count= */ plus(count, mergeOperand(count))};
     }
 
     @Override

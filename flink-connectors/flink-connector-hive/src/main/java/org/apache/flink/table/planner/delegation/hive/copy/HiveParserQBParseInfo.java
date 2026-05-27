@@ -42,6 +42,7 @@ public class HiveParserQBParseInfo {
     private final HashMap<String, HiveParserASTNode> aliasToSrc;
     // insclause-0 -> TOK_TAB HiveParserASTNode
     private final HashMap<String, HiveParserASTNode> nameToDest;
+
     /** For 'insert into FOO(x,y) select ...' this stores the insclause-0 -> x,y mapping. */
     private final Map<String, List<String>> nameToDestSchema;
 
@@ -69,11 +70,13 @@ public class HiveParserQBParseInfo {
 
     /** ClusterBy is a short name for both DistributeBy and SortBy. */
     private final HashMap<String, HiveParserASTNode> destToClusterby;
+
     /**
      * DistributeBy controls the hashcode of the row, which determines which reducer the rows will
      * go to.
      */
     private final HashMap<String, HiveParserASTNode> destToDistributeby;
+
     /**
      * SortBy controls the reduce keys, which affects the order of rows that the reducer receives.
      */
@@ -452,17 +455,23 @@ public class HiveParserQBParseInfo {
         return destToLateralView;
     }
 
-    /** @param isNoScanAnalyzeCommand the isNoScanAnalyzeCommand to set */
+    /**
+     * @param isNoScanAnalyzeCommand the isNoScanAnalyzeCommand to set
+     */
     public void setNoScanAnalyzeCommand(boolean isNoScanAnalyzeCommand) {
         this.isNoScanAnalyzeCommand = isNoScanAnalyzeCommand;
     }
 
-    /** @return the isPartialScanAnalyzeCommand */
+    /**
+     * @return the isPartialScanAnalyzeCommand
+     */
     public boolean isPartialScanAnalyzeCommand() {
         return isPartialScanAnalyzeCommand;
     }
 
-    /** @param isPartialScanAnalyzeCommand the isPartialScanAnalyzeCommand to set */
+    /**
+     * @param isPartialScanAnalyzeCommand the isPartialScanAnalyzeCommand to set
+     */
     public void setPartialScanAnalyzeCommand(boolean isPartialScanAnalyzeCommand) {
         this.isPartialScanAnalyzeCommand = isPartialScanAnalyzeCommand;
     }

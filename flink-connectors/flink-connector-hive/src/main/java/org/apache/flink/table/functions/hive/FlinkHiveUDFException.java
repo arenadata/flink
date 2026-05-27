@@ -22,12 +22,16 @@ import org.apache.flink.util.FlinkRuntimeException;
 
 /** Hive UDF related exceptions in Flink. */
 public class FlinkHiveUDFException extends FlinkRuntimeException {
-    /** @param message the detail message. */
+    /**
+     * @param message the detail message.
+     */
     public FlinkHiveUDFException(String message) {
         super(message);
     }
 
-    /** @param cause the cause. */
+    /**
+     * @param cause the cause.
+     */
     public FlinkHiveUDFException(Throwable cause) {
         super(cause);
     }

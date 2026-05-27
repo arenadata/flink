@@ -25,7 +25,6 @@ import org.apache.flink.configuration.ResourceManagerOptions;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /** This class describes the basic parameters for launching a TaskManager process. */
 public class ContaineredTaskManagerParameters implements java.io.Serializable {
 

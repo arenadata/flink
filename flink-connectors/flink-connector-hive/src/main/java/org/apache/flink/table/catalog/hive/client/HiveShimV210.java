@@ -175,8 +175,11 @@ public class HiveShimV210 extends HiveShimV201 {
     }
 
     List<Object> createHivePKs(Table table, UniqueConstraint pk, List<Byte> traits)
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException,
-                    NoSuchMethodException, InvocationTargetException {
+            throws ClassNotFoundException,
+                    IllegalAccessException,
+                    InstantiationException,
+                    NoSuchMethodException,
+                    InvocationTargetException {
         List<Object> res = new ArrayList<>();
         if (pk != null) {
             Class pkClz = Class.forName("org.apache.hadoop.hive.metastore.api.SQLPrimaryKey");

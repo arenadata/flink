@@ -221,7 +221,7 @@ public class HiveParser implements Parser {
             return Collections.singletonList(nonSqlOperation.get());
         }
         HiveConf hiveConfCopy = new HiveConf(hiveConf);
-        hiveConfCopy.setVar(HiveConf.ConfVars.DYNAMICPARTITIONINGMODE, "nonstrict");
+        hiveConfCopy.setVar(HiveConf.ConfVars.DYNAMIC_PARTITIONING_MODE, "nonstrict");
         hiveConfCopy.set("hive.allow.udf.load.on.demand", "false");
         hiveConfCopy.setVar(HiveConf.ConfVars.HIVE_EXECUTION_ENGINE, "mr");
         // Note: it's equal to HiveCatalog#getHiveVersion, but we can't use

@@ -76,7 +76,6 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBaseCompare;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBaseNumeric;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge;
-import org.apache.hadoop.hive.ql.udf.generic.GenericUDFCase;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFIn;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFTimestamp;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFToBinary;
@@ -535,7 +534,7 @@ public class HiveParserRexNodeConverter {
 
         boolean isNumeric = isNumericBinary(func);
         boolean isCompare = !isNumeric && tgtUdf instanceof GenericUDFBaseCompare;
-        boolean isWhenCase = tgtUdf instanceof GenericUDFWhen || tgtUdf instanceof GenericUDFCase;
+        boolean isWhenCase = tgtUdf instanceof GenericUDFWhen;
         boolean isTransformableTimeStamp =
                 func.getGenericUDF() instanceof GenericUDFUnixTimeStamp
                         && func.getChildren().size() != 0;

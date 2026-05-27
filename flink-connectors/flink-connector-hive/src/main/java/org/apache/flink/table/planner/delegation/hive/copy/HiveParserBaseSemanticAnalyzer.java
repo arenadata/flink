@@ -75,8 +75,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.hadoop.hive.common.ObjectPair;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.ql.ErrorMsg;
@@ -725,7 +725,8 @@ public class HiveParserBaseSemanticAnalyzer {
 
         HiveParserTypeCheckCtx typeCheckCtx =
                 new HiveParserTypeCheckCtx(null, frameworkConfig, cluster);
-        String defaultPartitionName = HiveConf.getVar(conf, HiveConf.ConfVars.DEFAULTPARTITIONNAME);
+        String defaultPartitionName =
+                HiveConf.getVar(conf, HiveConf.ConfVars.DEFAULT_PARTITION_NAME);
         boolean result = true;
         for (Node childNode : astNode.getChildren()) {
             HiveParserASTNode childASTNode = (HiveParserASTNode) childNode;
@@ -1491,16 +1492,16 @@ public class HiveParserBaseSemanticAnalyzer {
     }
 
     public static boolean topLevelConjunctCheck(
-            HiveParserASTNode searchCond, ObjectPair<Boolean, Integer> subqInfo) {
+            HiveParserASTNode searchCond, MutablePair<Boolean, Integer> subqInfo) {
         if (searchCond.getType() == HiveASTParser.KW_OR) {
-            subqInfo.setFirst(Boolean.TRUE);
-            if (subqInfo.getSecond() > 1) {
+            subqInfo.setLeft(Boolean.TRUE);
+            if (subqInfo.getRight() > 1) {
                 return false;
             }
         }
         if (searchCond.getType() == HiveASTParser.TOK_SUBQUERY_EXPR) {
-            subqInfo.setSecond(subqInfo.getSecond() + 1);
-            return subqInfo.getSecond() <= 1 || !subqInfo.getFirst();
+            subqInfo.setRight(subqInfo.getRight() + 1);
+            return subqInfo.getRight() <= 1 || !subqInfo.getLeft();
         }
         for (int i = 0; i < searchCond.getChildCount(); i++) {
             boolean validSubQuery =
@@ -1751,7 +1752,11 @@ public class HiveParserBaseSemanticAnalyzer {
                             HiveParserUtils.getWritableObjectInspector(aggParameters);
                     genericUDAFEvaluator =
                             FunctionRegistry.getGenericWindowingEvaluator(
-                                    aggName, originalParameterTypeInfos, isDistinct, isAllColumns);
+                                    aggName,
+                                    originalParameterTypeInfos,
+                                    isDistinct,
+                                    isAllColumns,
+                                    true);
                     HiveParserBaseSemanticAnalyzer.GenericUDAFInfo udaf =
                             HiveParserUtils.getGenericUDAFInfo(
                                     genericUDAFEvaluator, amode, aggParameters);
@@ -2197,7 +2202,7 @@ public class HiveParserBaseSemanticAnalyzer {
                 if (numDynParts > 0) {
                     int numStaPart = parts.size() - numDynParts;
                     if (numStaPart == 0
-                            && conf.getVar(HiveConf.ConfVars.DYNAMICPARTITIONINGMODE)
+                            && conf.getVar(HiveConf.ConfVars.DYNAMIC_PARTITIONING_MODE)
                                     .equalsIgnoreCase("strict")) {
                         throw new SemanticException(
                                 ErrorMsg.DYNAMIC_PARTITION_STRICT_MODE.getMsg());

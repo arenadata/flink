@@ -874,7 +874,7 @@ public class HiveTableSourceITCase extends BatchAbstractTestBase {
                 .createDynamicTableSource(any(DynamicTableFactory.Context.class));
 
         HiveCatalog catalogSpy = spy(hiveCatalog);
-        doReturn(Optional.of(tableFactorySpy)).when(catalogSpy).getTableFactory();
+        doReturn(Optional.of(tableFactorySpy)).when(catalogSpy).getFactory();
 
         TableEnvironment tableEnv = HiveTestUtils.createTableEnvInBatchMode();
         tableEnv.getConfig().set(HiveOptions.TABLE_EXEC_HIVE_FALLBACK_MAPRED_READER, fallbackMR);

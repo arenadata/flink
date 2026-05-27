@@ -19,13 +19,12 @@
 package org.apache.flink.runtime.clusterframework;
 
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.CoreOptions;
+import org.apache.flink.configuration.ConfigurationUtils;
 import org.apache.flink.configuration.ResourceManagerOptions;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.apache.flink.configuration.ConfigConstants.ENV_JAVA_HOME;
 
 /** This class describes the basic parameters for launching a TaskManager process. */
 public class ContaineredTaskManagerParameters implements java.io.Serializable {
@@ -94,8 +93,7 @@ public class ContaineredTaskManagerParameters implements java.io.Serializable {
         }
 
         // set JAVA_HOME
-        config.getOptional(CoreOptions.FLINK_JAVA_HOME)
-                .ifPresent(javaHome -> envVars.put(ENV_JAVA_HOME, javaHome));
+        ConfigurationUtils.setJavaHomeEnv(config, envVars);
 
         // done
         return new ContaineredTaskManagerParameters(taskExecutorProcessSpec, envVars);

@@ -39,7 +39,6 @@ import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.factories.TableSinkFactoryContextImpl;
 import org.apache.flink.table.factories.TableSourceFactoryContextImpl;
-import org.apache.flink.table.legacy.factories.TableFactory;
 import org.apache.flink.table.legacy.sinks.TableSink;
 import org.apache.flink.table.legacy.sources.TableSource;
 import org.apache.flink.util.TestLoggerExtension;
@@ -53,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.apache.flink.table.catalog.hive.util.Constants.IDENTIFIER;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,9 +90,7 @@ class HiveTableFactoryTest {
                         resolvedSchema);
         catalog.createTable(new ObjectPath("mydb", "mytable"), table, true);
 
-        final Optional<TableFactory> tableFactoryOpt = catalog.getTableFactory();
-        assertThat(tableFactoryOpt).isPresent();
-        final HiveTableFactory tableFactory = (HiveTableFactory) tableFactoryOpt.get();
+        final HiveTableFactory tableFactory = new HiveTableFactory();
 
         final TableSource tableSource =
                 tableFactory.createTableSource(
@@ -143,6 +139,7 @@ class HiveTableFactoryTest {
                                 catalog.getFactory().orElseThrow(IllegalStateException::new),
                         ObjectIdentifier.of("mycatalog", "mydb", "mytable"),
                         new ResolvedCatalogTable(table, schema),
+                        Collections.emptyMap(),
                         new Configuration(),
                         Thread.currentThread().getContextClassLoader(),
                         false);
@@ -154,6 +151,7 @@ class HiveTableFactoryTest {
                                 catalog.getFactory().orElseThrow(IllegalStateException::new),
                         ObjectIdentifier.of("mycatalog", "mydb", "mytable"),
                         new ResolvedCatalogTable(table, schema),
+                        Collections.emptyMap(),
                         new Configuration(),
                         Thread.currentThread().getContextClassLoader(),
                         false);

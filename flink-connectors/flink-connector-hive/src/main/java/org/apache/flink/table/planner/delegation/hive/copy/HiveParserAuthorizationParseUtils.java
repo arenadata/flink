@@ -21,7 +21,7 @@ package org.apache.flink.table.planner.delegation.hive.copy;
 import org.apache.flink.table.planner.delegation.hive.parse.HiveASTParser;
 
 import org.apache.hadoop.hive.metastore.api.PrincipalType;
-import org.apache.hadoop.hive.ql.plan.PrincipalDesc;
+import org.apache.hadoop.hive.ql.ddl.privilege.PrincipalDesc;
 
 /** Counterpart of hive's org.apache.hadoop.hive.ql.parse.authorization.AuthorizationParseUtils. */
 public class HiveParserAuthorizationParseUtils {

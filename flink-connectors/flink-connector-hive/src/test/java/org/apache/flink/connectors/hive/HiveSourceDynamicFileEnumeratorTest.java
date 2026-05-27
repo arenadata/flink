@@ -120,11 +120,14 @@ class HiveSourceDynamicFileEnumeratorTest {
         testTypeValues.add(
                 new Tuple3<>(
                         new VarCharType(),
-                        StringData.fromString(HiveConf.ConfVars.DEFAULTPARTITIONNAME.defaultStrVal),
-                        HiveConf.ConfVars.DEFAULTPARTITIONNAME.defaultStrVal));
+                        StringData.fromString(
+                                HiveConf.ConfVars.DEFAULT_PARTITION_NAME.defaultStrVal),
+                        HiveConf.ConfVars.DEFAULT_PARTITION_NAME.defaultStrVal));
         testTypeValues.add(
                 new Tuple3<>(
-                        new IntType(), null, HiveConf.ConfVars.DEFAULTPARTITIONNAME.defaultStrVal));
+                        new IntType(),
+                        null,
+                        HiveConf.ConfVars.DEFAULT_PARTITION_NAME.defaultStrVal));
 
         RowType rowType =
                 RowType.of(testTypeValues.stream().map(t -> t.f0).toArray(LogicalType[]::new));
@@ -158,7 +161,7 @@ class HiveSourceDynamicFileEnumeratorTest {
 
     @Test
     void testNonNullFieldTypeWithDefaultPartitionName() {
-        String defaultPartitionName = HiveConf.ConfVars.DEFAULTPARTITIONNAME.defaultStrVal;
+        String defaultPartitionName = HiveConf.ConfVars.DEFAULT_PARTITION_NAME.defaultStrVal;
         List<String> keys = Arrays.asList("NonNullString", "NonNullInt");
         Map<String, String> partitionSpec = new HashMap<>();
         partitionSpec.put("NonNullString", defaultPartitionName);

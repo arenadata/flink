@@ -123,6 +123,7 @@ import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.SkewedInfo;
 import org.apache.hadoop.hive.ql.ErrorMsg;
+import org.apache.hadoop.hive.ql.ddl.privilege.PrincipalDesc;
 import org.apache.hadoop.hive.ql.exec.ColumnInfo;
 import org.apache.hadoop.hive.ql.exec.FunctionUtils;
 import org.apache.hadoop.hive.ql.lib.Node;
@@ -131,7 +132,6 @@ import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
-import org.apache.hadoop.hive.ql.plan.PrincipalDesc;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFMacro;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.typeinfo.CharTypeInfo;
@@ -292,7 +292,8 @@ public class HiveParserDDLSemanticAnalyzer {
         this.functionCatalog = calciteContext.getFunctionCatalog();
         reservedPartitionValues = new HashSet<>();
         // Partition can't have this name
-        reservedPartitionValues.add(HiveConf.getVar(conf, HiveConf.ConfVars.DEFAULTPARTITIONNAME));
+        reservedPartitionValues.add(
+                HiveConf.getVar(conf, HiveConf.ConfVars.DEFAULT_PARTITION_NAME));
         reservedPartitionValues.add(
                 HiveConf.getVar(conf, HiveConf.ConfVars.DEFAULT_ZOOKEEPER_PARTITION_NAME));
         // Partition value can't end in this suffix
@@ -1192,12 +1193,19 @@ public class HiveParserDDLSemanticAnalyzer {
         if (uniqueConstraint != null) {
             notNullColSet.addAll(uniqueConstraint.getColumns());
         }
-        Schema schema = HiveTableUtil.createSchema(cols, partCols, notNullColSet, uniqueConstraint);
+        Schema schema =
+                HiveTableUtil.createSchema(cols, partCols, notNullColSet, uniqueConstraint);
+        ResolvedSchema resolvedSchema =
+                HiveTableUtil.createResolvedSchema(
+                        cols, partCols, notNullColSet, uniqueConstraint);
+        ResolvedCatalogTable catalogTable =
+                new ResolvedCatalogTable(
+                        CatalogTable.of(
+                                schema, comment, HiveCatalog.getFieldNames(partCols), props),
+                        resolvedSchema);
         return new CreateTableOperation(
-                identifier,
-                CatalogTable.of(schema, comment, HiveCatalog.getFieldNames(partCols), props),
-                ifNotExists,
-                isTemporary);
+                identifier, catalogTable,
+                ifNotExists, isTemporary);
     }
 
     private void markHiveConnector(Map<String, String> props) {
@@ -1800,7 +1808,7 @@ public class HiveParserDDLSemanticAnalyzer {
         return new ShowPartitionsOperation(
                 tableIdentifier,
                 spec,
-                HiveConf.getVar(conf, HiveConf.ConfVars.DEFAULTPARTITIONNAME));
+                HiveConf.getVar(conf, HiveConf.ConfVars.DEFAULT_PARTITION_NAME));
     }
 
     private Operation convertShowDatabases(String catalogName) {
@@ -2271,7 +2279,7 @@ public class HiveParserDDLSemanticAnalyzer {
         } else {
             retValue = tblProp;
         }
-        String paraString = HiveConf.getVar(conf, HiveConf.ConfVars.NEWTABLEDEFAULTPARA);
+        String paraString = conf.get("hive.table.parameters.default", "");
         if (paraString != null && !paraString.isEmpty()) {
             for (String keyValuePair : paraString.split(",")) {
                 String[] keyValue = keyValuePair.split("=", 2);

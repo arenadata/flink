@@ -33,18 +33,18 @@ import java.io.IOException;
 public class JobConfUtils {
 
     /**
-     * Gets the {@link HiveConf.ConfVars#DEFAULTPARTITIONNAME} value from the {@link
+     * Gets the {@link HiveConf.ConfVars#DEFAULT_PARTITION_NAME} value from the {@link
      * JobConfWrapper}.
      */
     public static String getDefaultPartitionName(JobConfWrapper confWrapper) {
         return getDefaultPartitionName(confWrapper.conf());
     }
 
-    /** Gets the {@link HiveConf.ConfVars#DEFAULTPARTITIONNAME} value from the {@link JobConf}. */
+    /** Gets the {@link HiveConf.ConfVars#DEFAULT_PARTITION_NAME} value from the {@link JobConf}. */
     public static String getDefaultPartitionName(JobConf jobConf) {
         return jobConf.get(
-                HiveConf.ConfVars.DEFAULTPARTITIONNAME.varname,
-                HiveConf.ConfVars.DEFAULTPARTITIONNAME.defaultStrVal);
+                HiveConf.ConfVars.DEFAULT_PARTITION_NAME.varname,
+                HiveConf.ConfVars.DEFAULT_PARTITION_NAME.defaultStrVal);
     }
 
     private static void addCredentialsIntoJobConf(JobConf jobConf) {

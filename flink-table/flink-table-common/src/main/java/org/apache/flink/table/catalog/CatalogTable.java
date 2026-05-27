@@ -56,6 +56,20 @@ public interface CatalogTable extends CatalogBaseTable {
         return new CatalogTable.Builder();
     }
 
+    /** Creates an instance of {@link CatalogTable}. */
+    static CatalogTable of(
+            Schema schema,
+            @Nullable String comment,
+            List<String> partitionKeys,
+            Map<String, String> options) {
+        return newBuilder()
+                .schema(schema)
+                .comment(comment)
+                .partitionKeys(partitionKeys)
+                .options(options)
+                .build();
+    }
+
     /**
      * Creates an instance of {@link CatalogTable} from a map of string properties that were
      * previously created with {@link ResolvedCatalogTable#toProperties()}.

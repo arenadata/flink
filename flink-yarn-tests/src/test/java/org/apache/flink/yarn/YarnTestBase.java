@@ -35,8 +35,10 @@ import org.apache.flink.yarn.util.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
@@ -889,6 +891,12 @@ public abstract class YarnTestBase {
             hdfsConfiguration.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, tmpHDFS.getAbsolutePath());
             miniDFSCluster = new MiniDFSCluster.Builder(hdfsConfiguration).numDataNodes(2).build();
             miniDFSCluster.waitClusterUp();
+
+            // Hadoop 3.4+ creates /tmp with drwxr-xr-x; YARN staging dirs (created as 'mapred')
+            // need world-write. mkdirs() applies umask so use setPermission() to force 1777.
+            FileSystem fs = miniDFSCluster.getFileSystem();
+            fs.mkdirs(new Path("/tmp"));
+            fs.setPermission(new Path("/tmp"), new FsPermission((short) 01777));
 
             hdfsConfiguration = miniDFSCluster.getConfiguration(0);
             writeHDFSSiteConfigXML(hdfsConfiguration, targetTestClassesFolder);

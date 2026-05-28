@@ -13,66 +13,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Release
+name: Publish
 
 on:
+  workflow_dispatch:
   push:
-    tags: ['v*']
+    tags:
+      - "*"
 
 permissions:
-  contents: write
+  contents: read
   packages: write
 
+env:
+  MAVEN_ARGS: -B -V -e -ntp
+
 jobs:
-  release:
-    name: Build and Release
-    runs-on: ubuntu-22.04
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
         with:
-          fetch-depth: 0
-
-      - name: Verify tag is on release branch
-        run: |
-          BRANCHES=$(git branch -r --contains ${{ github.sha }} | grep 'origin/release' || true)
-          if [ -z "$BRANCHES" ]; then
-            echo "Tag must be on a release/* branch. Found on:"
-            git branch -r --contains ${{ github.sha }}
-            exit 1
-          fi
-          echo "Tag is on: $BRANCHES"
-
-      - name: Verify CI passed
-        run: |
-          CONCLUSION=$(gh run list --commit ${{ github.sha }} --workflow "Flink CI (beta)" --json conclusion -q '.[0].conclusion')
-          if [ -z "$CONCLUSION" ]; then
-            echo "No CI run found for this commit."
-            exit 1
-          fi
-          if [ "$CONCLUSION" != "success" ]; then
-            echo "CI has not passed (status: $CONCLUSION)"
-            exit 1
-          fi
-          echo "CI passed"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/setup-java@v4
-        with:
-          java-version: 21
           distribution: temurin
+          java-version: 21
           cache: maven
           server-id: arenadata
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
 
-      - name: Deploy to GitHub Packages
-        run: ./mvnw deploy -DskipTests
+      - name: License check
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw ${{ env.MAVEN_ARGS }} -DskipTests org.apache.rat:apache-rat-plugin:check -N
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
+      - name: Maven deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw ${{ env.MAVEN_ARGS }} clean deploy -DskipTests

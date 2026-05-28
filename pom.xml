@@ -50,6 +50,10 @@ under the License.
 	</scm>
 
 	<repositories>
+		<repository>
+			<id>arenadata</id>
+			<url>https://maven.pkg.github.com/arenadata/*</url>
+		</repository>
 		<!-- Add Redhat GA repository for jackson-mapper-asl -->
 		<repository>
 			<id>redhat</id>
@@ -67,6 +71,13 @@ under the License.
 			</releases>
 		</repository>
 	</repositories>
+
+	<distributionManagement>
+		<repository>
+			<id>arenadata</id>
+			<url>https://maven.pkg.github.com/arenadata/flink</url>
+		</repository>
+	</distributionManagement>
 
 	<modules>
 		<module>flink-annotations</module>
@@ -112,7 +123,7 @@ under the License.
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<flink.hadoop.version>2.10.2</flink.hadoop.version>
+		<flink.hadoop.version>3.4.3.1-4.3.0-1</flink.hadoop.version>
 		<flink.XmxMax>3072m</flink.XmxMax>
 		<!-- XmxMax / forkCountITCase -->
 		<flink.XmxITCase>1536m</flink.XmxITCase>
@@ -175,8 +186,8 @@ under the License.
 			Starting Hadoop 3, org.apache.kerby will be used instead of MiniKDC. We may have
 			to revisit the impact at that time.
 		-->
-		<minikdc.version>3.2.4</minikdc.version>
-		<hive.version>2.3.10</hive.version>
+		<minikdc.version>3.4.1</minikdc.version>
+		<hive.version>4.3.0.1-4.3.0-1</hive.version>
 		<orc.version>1.5.6</orc.version>
 		<japicmp.referenceVersion>2.2.0</japicmp.referenceVersion>
 		<japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>
@@ -1182,6 +1193,9 @@ under the License.
 
 		<profile>
 			<id>java21-target</id>
+			<activation>
+				<jdk>[21,)</jdk>
+			</activation>
 			<build>
 				<plugins>
 					<plugin>
@@ -1191,6 +1205,7 @@ under the License.
 							<source>21</source>
 							<target>21</target>
 							<compilerArgs combine.children="append">
+								<arg>--add-exports=java.base/sun.net.util=ALL-UNNAMED</arg>
 								<arg>--add-exports=java.management/sun.management=ALL-UNNAMED</arg>
 								<arg>--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED</arg>
 								<arg>--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED</arg>

@@ -956,7 +956,31 @@ class YarnClusterDescriptorTest {
                         "",
                         "./lib/flink_dist.jar",
                         ApplicationId.newInstance(0, 0));
-        assertThat(masterEnv).doesNotContainKey(ConfigConstants.ENV_JAVA_HOME);
+        final String origJavaHome = System.getenv(ConfigConstants.ENV_JAVA_HOME);
+        assertThat(masterEnv.get(ConfigConstants.ENV_JAVA_HOME)).isEqualTo(origJavaHome);
+    }
+
+    @Test
+    public void testContainerEnvJavaHomeNewValue(@TempDir File flinkHomeDir) throws IOException {
+        final Configuration flinkConfig = new Configuration();
+        final String newJavaHome = "/usr/lib/jvm/java-openjdk-17";
+        final Map<String, String> oldEnv = System.getenv();
+
+        try {
+            Map<String, String> newEnv = new HashMap<>(System.getenv());
+            newEnv.put(ConfigConstants.ENV_JAVA_HOME, newJavaHome);
+            CommonTestUtils.setEnv(newEnv);
+            final Map<String, String> masterEnv =
+                    getTestMasterEnv(
+                            flinkConfig,
+                            flinkHomeDir,
+                            "",
+                            "./lib/flink_dist.jar",
+                            ApplicationId.newInstance(0, 0));
+            assertThat(masterEnv.get(ConfigConstants.ENV_JAVA_HOME)).isEqualTo(newJavaHome);
+        } finally {
+            CommonTestUtils.setEnv(oldEnv);
+        }
     }
 
     @Test

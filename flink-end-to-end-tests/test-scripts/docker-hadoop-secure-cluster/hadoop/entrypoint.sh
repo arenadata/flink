@@ -100,10 +100,6 @@ elif [ "$1" == "master" ]; then
     sudo -E jps -v >> /var/log/hadoop/debugging.out
     echo "--------------------" >> /var/log/hadoop/debugging.out
     nohup sudo -E -u hdfs $HADOOP_PREFIX/bin/hdfs namenode 2>> /var/log/hadoop/namenode.err >> /var/log/hadoop/namenode.out &
-    nohup sudo -E -u yarn $HADOOP_PREFIX/bin/yarn resourcemanager 2>> /var/log/hadoop/resourcemanager.err >> /var/log/hadoop/resourcemanager.out &
-    nohup sudo -E -u yarn $HADOOP_PREFIX/bin/yarn timelineserver 2>> /var/log/hadoop/timelineserver.err >> /var/log/hadoop/timelineserver.out &
-    nohup sudo -E -u mapred $HADOOP_PREFIX/bin/mapred historyserver 2>> /var/log/hadoop/historyserver.err >> /var/log/hadoop/historyserver.out &
-
 
     kadmin -p ${KERBEROS_ADMIN_USER} -w ${KERBEROS_ADMIN_PASSWORD} -q "addprinc -randkey root@${KRB_REALM}"
     kadmin -p ${KERBEROS_ADMIN_USER} -w ${KERBEROS_ADMIN_PASSWORD} -q "xst -k /root/root.keytab root"
@@ -130,6 +126,12 @@ elif [ "$1" == "master" ]; then
     hdfs dfs -chown hadoop-user:hadoop-user /user/hadoop-user
 
     kdestroy
+
+    # Start YARN services only after HDFS directories are ready
+    nohup sudo -E -u yarn $HADOOP_PREFIX/bin/yarn resourcemanager 2>> /var/log/hadoop/resourcemanager.err >> /var/log/hadoop/resourcemanager.out &
+    nohup sudo -E -u yarn $HADOOP_PREFIX/bin/yarn timelineserver 2>> /var/log/hadoop/timelineserver.err >> /var/log/hadoop/timelineserver.out &
+    nohup sudo -E -u mapred $HADOOP_PREFIX/bin/mapred historyserver 2>> /var/log/hadoop/historyserver.err >> /var/log/hadoop/historyserver.out &
+
     echo "Finished master initialization"
 
     while true; do sleep 1000; done

@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.configuration.ConfigConstants.ENV_JAVA_HOME;
 import static org.apache.flink.configuration.MetricOptions.SYSTEM_RESOURCE_METRICS;
 import static org.apache.flink.configuration.MetricOptions.SYSTEM_RESOURCE_METRICS_PROBING_INTERVAL;
 import static org.apache.flink.util.Preconditions.checkArgument;
@@ -620,6 +621,29 @@ public class ConfigurationUtils {
     public static boolean filterPrefixMapKey(String key, String candidate) {
         final String prefixKey = key + ".";
         return candidate.startsWith(prefixKey);
+    }
+
+    /**
+     * Set the JAVA_HOME variable in the provided environment map.
+     *
+     * <p>This method follows a specific priority order to determine the JAVA_HOME value:
+     *
+     * <ol>
+     *   <li>If the environment map already contains the JAVA_HOME key, the method does nothing.
+     *   <li>Otherwise, it attempts to retrieve JAVA_HOME from the Flink configuration using {@link
+     *       CoreOptions#FLINK_JAVA_HOME}.
+     *   <li>If it isn't found in configuration, it falls back to the system environment variable.
+     *   <li>If a value is found through either source, it is added to the environment map.
+     * </ol>
+     */
+    public static void setJavaHomeEnv(Configuration configuration, Map<String, String> env) {
+        if (!env.containsKey(ENV_JAVA_HOME)) {
+            Optional.ofNullable(
+                            configuration
+                                    .getOptional(CoreOptions.FLINK_JAVA_HOME)
+                                    .orElse(System.getenv(ENV_JAVA_HOME)))
+                    .ifPresent(javaHomeStr -> env.put(ENV_JAVA_HOME, javaHomeStr));
+        }
     }
 
     static Map<String, String> convertToPropertiesPrefixed(

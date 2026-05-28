@@ -1,0 +1,18 @@
+flink-sql-connector-hive-4.3.0
+Copyright 2014-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This project bundles the following dependencies under the Apache Software License 2.0. (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+- org.apache.avro:avro-mapred:hadoop2:1.8.2
+- org.apache.avro:avro:1.8.2
+- org.apache.calcite:calcite-core:1.25.0
+- org.apache.hive:hive-exec:4.3.0.1-4.3.0-1
+- org.apache.thrift:libfb303:0.9.3
+
+This project bundles the following dependencies under the BSD license.
+See bundled license files for details.
+
+- org.antlr:antlr-runtime:3.5.2

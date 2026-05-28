@@ -18,6 +18,7 @@
 
 package org.apache.flink.kubernetes.kubeclient;
 
+import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.configuration.ResourceManagerOptions;
 import org.apache.flink.configuration.TaskManagerOptions;
@@ -80,6 +81,7 @@ public class KubernetesTaskManagerTestBase extends KubernetesPodTestBase {
                 TASK_MANAGER_MEMORY_LIMIT_FACTOR);
         this.flinkConfig.set(
                 KubernetesConfigOptions.KUBERNETES_TASKMANAGER_ENTRYPOINT_ARGS, ENTRYPOINT_ARGS);
+        flinkConfig.set(CoreOptions.FLINK_JAVA_HOME, "/test/jdk");
     }
 
     @Override

@@ -143,8 +143,11 @@ public class CachedDataInputStream extends FSDataInputStream implements ByteBuff
                 return originalStream;
             } else {
                 // The stream is not closed, but we cannot get the cache stream.
-                // Meaning that it is in the process of closing, but the status has not been
-                // updated. Thus, we'd better retry here until it reach a stable state (CLOSING).
+                if (streamStatus == StreamStatus.CACHED_OPEN) {
+                    closeCachedStream();
+                }
+                // If it is in the process of closing, retry until it reaches a stable state
+                // (CLOSING).
                 Thread.yield();
             }
         }

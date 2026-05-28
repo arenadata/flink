@@ -144,6 +144,8 @@ public class CachedDataInputStream extends FSDataInputStream implements ByteBuff
                     fileBasedCache.incHitCounter();
                     return stream;
                 }
+                closeCachedStream();
+                return getStream();
             }
             fileBasedCache.incMissCounter();
             return originalStream;

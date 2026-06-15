@@ -127,6 +127,89 @@ public class HistoryServerOptions {
                             "Enable HTTPs access to the HistoryServer web frontend. This is applicable only when the"
                                     + " global SSL flag security.ssl.enabled is set to true.");
 
+    /** Authentication type for the HistoryServer web-frontend. */
+    public static final ConfigOption<HistoryServerWebAuthenticationType>
+            HISTORY_SERVER_WEB_AUTHENTICATION_TYPE =
+                    key("historyserver.web.authentication.type")
+                            .enumType(HistoryServerWebAuthenticationType.class)
+                            .defaultValue(HistoryServerWebAuthenticationType.NONE)
+                            .withDescription(
+                                    "Authentication type for the HistoryServer web frontend and "
+                                            + "REST endpoints.");
+
+    /** Kerberos principal for HistoryServer SPNEGO authentication. */
+    public static final ConfigOption<String>
+            HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL =
+                    key("historyserver.web.authentication.kerberos.principal")
+                            .stringType()
+                            .noDefaultValue()
+                            .withDescription(
+                                    "Kerberos principal for HistoryServer SPNEGO authentication. "
+                                            + "Required when HistoryServer web authentication type "
+                                            + "is KERBEROS. The principal must start with HTTP/. "
+                                            + "The _HOST placeholder is replaced with the local "
+                                            + "hostname. Use * to accept all HTTP principals in the "
+                                            + "keytab.");
+
+    /** Kerberos keytab for HistoryServer SPNEGO authentication. */
+    public static final ConfigOption<String> HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_KEYTAB =
+            key("historyserver.web.authentication.kerberos.keytab")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Absolute path to the keytab file for the HistoryServer SPNEGO "
+                                    + "principal. Required when HistoryServer web authentication "
+                                    + "type is KERBEROS.");
+
+    /** Kerberos auth-to-local rules for HistoryServer SPNEGO authentication. */
+    public static final ConfigOption<String> HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_NAME_RULES =
+            key("historyserver.web.authentication.kerberos.name-rules")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Kerberos auth-to-local rules used to map authenticated principals to "
+                                    + "local user names. If unset, the default rule is used.");
+
+    /** Validity of HistoryServer web authentication tokens. */
+    public static final ConfigOption<Duration> HISTORY_SERVER_WEB_AUTHENTICATION_TOKEN_VALIDITY =
+            key("historyserver.web.authentication.token.validity")
+                    .durationType()
+                    .defaultValue(Duration.ofHours(10))
+                    .withDescription(
+                            "Validity period for HistoryServer SPNEGO authentication cookies.");
+
+    /** Cookie path for HistoryServer web authentication tokens. */
+    public static final ConfigOption<String> HISTORY_SERVER_WEB_AUTHENTICATION_COOKIE_PATH =
+            key("historyserver.web.authentication.cookie.path")
+                    .stringType()
+                    .defaultValue("/")
+                    .withDescription(
+                            "Cookie path for HistoryServer SPNEGO authentication cookies.");
+
+    /** Shared signing secret for HistoryServer web authentication tokens. */
+    public static final ConfigOption<String> HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET =
+            key("historyserver.web.authentication.signature.secret")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Shared secret for signing HistoryServer SPNEGO authentication "
+                                    + "cookies. If neither this option nor the secret-file option "
+                                    + "is set, a random process-local secret is generated. "
+                                    + "Configure the same secret for all HistoryServer instances "
+                                    + "that should accept each other's authentication cookies.");
+
+    /** File containing the shared signing secret for HistoryServer web authentication tokens. */
+    public static final ConfigOption<String>
+            HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET_FILE =
+                    key("historyserver.web.authentication.signature.secret-file")
+                            .stringType()
+                            .noDefaultValue()
+                            .withDescription(
+                                    "File containing the shared secret for signing HistoryServer "
+                                            + "SPNEGO authentication cookies. Configure the same "
+                                            + "secret file for all HistoryServer instances that "
+                                            + "should accept each other's authentication cookies.");
+
     private static final String HISTORY_SERVER_RETAINED_JOBS_KEY =
             "historyserver.archive.retained-jobs";
     private static final String HISTORY_SERVER_RETAINED_TTL_KEY =
@@ -197,6 +280,12 @@ public class HistoryServerOptions {
                                             text(CONFIGURE_SINGLE_INSTANCE),
                                             text(CONFIGURE_CONSISTENT))
                                     .build());
+
+    /** Supported HistoryServer web authentication types. */
+    public enum HistoryServerWebAuthenticationType {
+        NONE,
+        KERBEROS
+    }
 
     private HistoryServerOptions() {}
 }

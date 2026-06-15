@@ -290,13 +290,27 @@ rest:
 # historyserver:
 #   web:
 #     # The address under which the web-based HistoryServer listens.
+#     # Binding to 0.0.0.0 exposes archived job metadata to the network. Enable
+#     # HistoryServer web authentication or protect this endpoint before using
+#     # a network-facing address.
 #     address: 0.0.0.0
 #     # The port under which the web-based HistoryServer listens.
 #     port: 8082
+#     # Optional Kerberos/SPNEGO authentication for the HistoryServer web UI and
+#     # REST endpoints. The default authentication type is NONE.
+#     authentication:
+#       type: KERBEROS
+#       kerberos:
+#         principal: HTTP/_HOST@EXAMPLE.COM
+#         keytab: /etc/security/keytabs/flink-historyserver.keytab
+#         # name-rules: DEFAULT
+#       signature:
+#         # Configure the same secret file for all HistoryServer instances that
+#         # should accept each other's authentication cookies.
+#         secret-file: /etc/flink/historyserver-auth-secret
 #   archive:
 #     fs:
 #       # Comma separated list of directories to monitor for completed jobs.
 #       dir: hdfs:///completed-jobs/
 #       # Interval in milliseconds for refreshing the monitored directories.
 #       fs.refresh-interval: 10000
-

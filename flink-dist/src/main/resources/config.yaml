@@ -275,6 +275,27 @@ rest:
 #     login-context-name: Client
 
 #==============================================================================
+# SQL Gateway REST Security Configuration
+#==============================================================================
+
+# SQL Gateway REST authentication is disabled by default. If the REST endpoint is
+# reachable from an untrusted network, enable SPNEGO or protect it with an
+# authenticated proxy before allowing clients to create sessions and execute SQL.
+#
+# sql-gateway:
+#   endpoint:
+#     rest:
+#       address: localhost
+#       authentication:
+#         type: KERBEROS
+#         kerberos:
+#           principal: HTTP/_HOST@EXAMPLE.COM
+#           keytab: /etc/security/keytabs/flink-sql-gateway.keytab
+#           name-rules: DEFAULT
+#         signature:
+#           secret-file: /etc/flink/sql-gateway-cookie-secret
+
+#==============================================================================
 # HistoryServer
 #==============================================================================
 

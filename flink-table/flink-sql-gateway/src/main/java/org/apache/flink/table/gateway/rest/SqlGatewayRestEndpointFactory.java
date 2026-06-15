@@ -24,6 +24,7 @@ import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.table.gateway.api.endpoint.SqlGatewayEndpoint;
 import org.apache.flink.table.gateway.api.endpoint.SqlGatewayEndpointFactory;
 import org.apache.flink.table.gateway.api.endpoint.SqlGatewayEndpointFactoryUtils;
+import org.apache.flink.table.gateway.rest.security.SqlGatewaySpnegoAuthenticationHandlerFactory;
 import org.apache.flink.table.gateway.api.utils.SqlGatewayException;
 
 import java.util.HashSet;
@@ -31,6 +32,14 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.ADDRESS;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_COOKIE_PATH;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_KERBEROS_KEYTAB;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_KERBEROS_NAME_RULES;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_KERBEROS_PRINCIPAL;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_SIGNATURE_SECRET;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_SIGNATURE_SECRET_FILE;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_TOKEN_VALIDITY;
+import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.AUTHENTICATION_TYPE;
 import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.BIND_ADDRESS;
 import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.BIND_PORT;
 import static org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions.PORT;
@@ -51,6 +60,7 @@ public class SqlGatewayRestEndpointFactory implements SqlGatewayEndpointFactory 
                 rebuildRestEndpointOptions(
                         context.getEndpointOptions(), context.getFlinkConfiguration().toMap());
         try {
+            SqlGatewaySpnegoAuthenticationHandlerFactory.validateConfiguration(config);
             return new SqlGatewayRestEndpoint(config, context.getSqlGatewayService());
         } catch (Exception e) {
             throw new SqlGatewayException("Cannot start the rest endpoint.", e);
@@ -96,6 +106,14 @@ public class SqlGatewayRestEndpointFactory implements SqlGatewayEndpointFactory 
         options.add(BIND_ADDRESS);
         options.add(PORT);
         options.add(BIND_PORT);
+        options.add(AUTHENTICATION_TYPE);
+        options.add(AUTHENTICATION_KERBEROS_PRINCIPAL);
+        options.add(AUTHENTICATION_KERBEROS_KEYTAB);
+        options.add(AUTHENTICATION_KERBEROS_NAME_RULES);
+        options.add(AUTHENTICATION_TOKEN_VALIDITY);
+        options.add(AUTHENTICATION_COOKIE_PATH);
+        options.add(AUTHENTICATION_SIGNATURE_SECRET);
+        options.add(AUTHENTICATION_SIGNATURE_SECRET_FILE);
         return options;
     }
 }

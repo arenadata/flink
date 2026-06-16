@@ -101,6 +101,18 @@
                     <groupId>io.dropwizard.metrics</groupId>
                     <artifactId>metrics-core</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-framework</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-handler</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -223,6 +235,8 @@
                                 <include>org.quartz-scheduler:quartz</include>
                                 <include>org.apache.hadoop:hadoop-auth</include>
                                 <include>commons-codec:commons-codec</include>
+                                <include>org.apache.httpcomponents:httpclient</include>
+                                <include>org.apache.httpcomponents:httpcore</include>
                                 <include>org.apache.hadoop.thirdparty:hadoop-shaded-guava</include>
                                 <include>org.apache.kerby:kerb-core</include>
                                 <include>org.apache.kerby:kerby-pkix</include>
@@ -249,6 +263,10 @@
                             <relocation>
                                 <pattern>org.terracotta.quartz</pattern>
                                 <shadedPattern>org.apache.flink.table.shaded.org.terracotta.quartz</shadedPattern>
+                            </relocation>
+                            <relocation>
+                                <pattern>org.apache.hadoop</pattern>
+                                <shadedPattern>org.apache.flink.table.shaded.org.apache.hadoop</shadedPattern>
                             </relocation>
                         </relocations>
                     </configuration>

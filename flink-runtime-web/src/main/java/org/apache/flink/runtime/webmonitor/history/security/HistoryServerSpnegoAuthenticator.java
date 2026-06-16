@@ -20,11 +20,12 @@ package org.apache.flink.runtime.webmonitor.history.security;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.security.KerberosUtils;
-import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.FullHttpRequest;
+import org.apache.flink.util.ConfigurationException;
+
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpHeaderNames;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpRequest;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.cookie.Cookie;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.cookie.ServerCookieDecoder;
-import org.apache.flink.util.ConfigurationException;
 
 import org.apache.hadoop.security.authentication.client.AuthenticatedURL;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
@@ -32,7 +33,6 @@ import org.apache.hadoop.security.authentication.client.KerberosAuthenticator;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
 import org.apache.hadoop.security.authentication.util.KerberosName;
 import org.apache.hadoop.security.authentication.util.KerberosUtil;
-
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -65,7 +65,8 @@ final class HistoryServerSpnegoAuthenticator {
 
     static final String TOKEN_TYPE = "kerberos";
 
-    private static final Logger LOG = LoggerFactory.getLogger(HistoryServerSpnegoAuthenticator.class);
+    private static final Logger LOG =
+            LoggerFactory.getLogger(HistoryServerSpnegoAuthenticator.class);
     private static final Pattern HTTP_PRINCIPAL_PATTERN = Pattern.compile("HTTP/.*");
 
     private final Map<String, Subject> serverSubjects;
@@ -101,7 +102,8 @@ final class HistoryServerSpnegoAuthenticator {
     }
 
     static HistoryServerSpnegoAuthenticator fromConfig(
-            HistoryServerWebAuthenticationConfig config, Clock clock) throws ConfigurationException {
+            HistoryServerWebAuthenticationConfig config, Clock clock)
+            throws ConfigurationException {
         Map<String, Subject> serverSubjects = createServerSubjects(config);
         return new HistoryServerSpnegoAuthenticator(
                 serverSubjects,
@@ -112,13 +114,14 @@ final class HistoryServerSpnegoAuthenticator {
                 clock);
     }
 
-    HistoryServerAuthenticationResult authenticate(FullHttpRequest request) {
+    HistoryServerAuthenticationResult authenticate(HttpRequest request) {
         Optional<String> cookieValue = getAuthenticationCookie(request);
         if (cookieValue.isPresent()) {
             try {
                 AuthenticationToken token = tokenSigner.verifyAndExtract(cookieValue.get());
                 if (TOKEN_TYPE.equals(token.getType()) && !token.isExpired()) {
-                    return HistoryServerAuthenticationResult.authenticated(token.getUserName());
+                    return HistoryServerAuthenticationResult.authenticated(
+                            token.getUserName(), token.getName(), token.getType());
                 }
                 LOG.debug("Ignoring invalid or expired HistoryServer authentication cookie.");
             } catch (AuthenticationException | IllegalArgumentException e) {
@@ -200,8 +203,8 @@ final class HistoryServerSpnegoAuthenticator {
         return tokenSigner;
     }
 
-    private HistoryServerAuthenticationResult authenticate(String serverPrincipal, byte[] clientToken)
-            throws GSSException, IOException {
+    private HistoryServerAuthenticationResult authenticate(
+            String serverPrincipal, byte[] clientToken) throws GSSException, IOException {
         GSSContext gssContext = null;
         GSSCredential gssCredential = null;
         try {
@@ -226,7 +229,10 @@ final class HistoryServerSpnegoAuthenticator {
                     new AuthenticationToken(userName, clientPrincipal, TOKEN_TYPE);
             authenticationToken.setExpires(clock.millis() + tokenValidityMillis);
             return HistoryServerAuthenticationResult.authenticated(
-                    userName, tokenSigner.sign(authenticationToken));
+                    userName,
+                    clientPrincipal,
+                    authenticationToken.getType(),
+                    tokenSigner.sign(authenticationToken));
         } finally {
             if (gssContext != null) {
                 gssContext.dispose();
@@ -253,7 +259,7 @@ final class HistoryServerSpnegoAuthenticator {
                 KerberosAuthenticator.NEGOTIATE.length());
     }
 
-    private static Optional<String> getAuthenticationCookie(FullHttpRequest request) {
+    private static Optional<String> getAuthenticationCookie(HttpRequest request) {
         for (String cookieHeader : request.headers().getAll(HttpHeaderNames.COOKIE)) {
             try {
                 Set<Cookie> cookies = ServerCookieDecoder.STRICT.decode(cookieHeader);
@@ -270,8 +276,7 @@ final class HistoryServerSpnegoAuthenticator {
     }
 
     private static Map<String, Subject> createServerSubjects(
-            HistoryServerWebAuthenticationConfig config)
-            throws ConfigurationException {
+            HistoryServerWebAuthenticationConfig config) throws ConfigurationException {
         Map<String, Subject> subjects = new HashMap<>();
         for (String principal : resolveServerPrincipals(config)) {
             subjects.put(

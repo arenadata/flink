@@ -17,12 +17,13 @@
  */
 
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { fromEvent, merge } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { fromEvent, merge, Observable, of } from 'rxjs';
+import { catchError, map, shareReplay, startWith } from 'rxjs/operators';
 
-import { StatusService } from '@flink-runtime-web/services';
+import { ConfigService, StatusService } from '@flink-runtime-web/services';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzBadgeModule } from 'ng-zorro-antd/badge';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
@@ -30,6 +31,13 @@ import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
+
+interface AuthenticatedUser {
+  authenticated: boolean;
+  user?: string;
+  principal?: string;
+  type?: string;
+}
 
 @Component({
   selector: 'flink-root',
@@ -55,6 +63,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 export class AppComponent {
   collapsed = false;
   visible = false;
+  authenticatedUser$: Observable<AuthenticatedUser>;
   online$ = merge(
     fromEvent(window, 'offline').pipe(map(() => false)),
     fromEvent(window, 'online').pipe(map(() => true))
@@ -81,5 +90,17 @@ export class AppComponent {
     this.cdr.markForCheck();
   }
 
-  constructor(public statusService: StatusService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    public statusService: StatusService,
+    private cdr: ChangeDetectorRef,
+    private httpClient: HttpClient,
+    private configService: ConfigService
+  ) {
+    this.authenticatedUser$ = this.historyServerEnv
+      ? this.httpClient.get<AuthenticatedUser>(`${this.configService.BASE_URL}/auth/user`).pipe(
+          catchError(() => of({ authenticated: false })),
+          shareReplay({ bufferSize: 1, refCount: true })
+        )
+      : of({ authenticated: false });
+  }
 }

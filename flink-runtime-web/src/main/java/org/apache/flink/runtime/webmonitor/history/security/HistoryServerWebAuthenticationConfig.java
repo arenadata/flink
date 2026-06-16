@@ -35,22 +35,14 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
 
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_COOKIE_PATH;
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_KEYTAB;
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_NAME_RULES;
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL;
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET;
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET_FILE;
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_TOKEN_VALIDITY;
-import static org.apache.flink.configuration.HistoryServerOptions
-        .HISTORY_SERVER_WEB_AUTHENTICATION_TYPE;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_COOKIE_PATH;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_KEYTAB;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_NAME_RULES;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET_FILE;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_TOKEN_VALIDITY;
+import static org.apache.flink.configuration.HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_TYPE;
 
 /** Parsed and validated HistoryServer web authentication configuration. */
 final class HistoryServerWebAuthenticationConfig {
@@ -144,10 +136,7 @@ final class HistoryServerWebAuthenticationConfig {
             return configuration.get(HISTORY_SERVER_WEB_AUTHENTICATION_TYPE);
         } catch (IllegalArgumentException e) {
             throw new ConfigurationException(
-                    "Unsupported "
-                            + HISTORY_SERVER_WEB_AUTHENTICATION_TYPE.key()
-                            + " value.",
-                    e);
+                    "Unsupported " + HISTORY_SERVER_WEB_AUTHENTICATION_TYPE.key() + " value.", e);
         }
     }
 

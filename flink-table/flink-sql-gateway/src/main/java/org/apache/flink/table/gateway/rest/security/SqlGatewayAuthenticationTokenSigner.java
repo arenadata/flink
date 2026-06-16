@@ -21,6 +21,9 @@ package org.apache.flink.table.gateway.rest.security;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -29,9 +32,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Optional;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 

@@ -54,8 +54,7 @@ class HistoryServerSpnegoConfigTest {
         assertThatThrownBy(() -> HistoryServerWebAuthenticationConfig.from(configuration))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining(
-                        HistoryServerOptions
-                                .HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL
+                        HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL
                                 .key());
     }
 
@@ -123,8 +122,7 @@ class HistoryServerSpnegoConfigTest {
     void shouldRejectInvalidCookiePath() throws Exception {
         Configuration configuration = validKerberosConfiguration();
         configuration.set(
-                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_COOKIE_PATH,
-                "history");
+                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_COOKIE_PATH, "history");
 
         assertThatThrownBy(() -> HistoryServerWebAuthenticationConfig.from(configuration))
                 .isInstanceOf(ConfigurationException.class)
@@ -150,8 +148,7 @@ class HistoryServerSpnegoConfigTest {
     void shouldRejectMultipleSignatureSecretSources() throws Exception {
         Configuration configuration = validKerberosConfiguration();
         configuration.set(
-                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET,
-                "secret");
+                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET, "secret");
         configuration.set(
                 HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET_FILE,
                 createSecretFile("secret").toString());

@@ -26,17 +26,16 @@ import org.apache.flink.table.gateway.api.utils.MockedSqlGatewayService;
 import org.apache.flink.table.gateway.rest.SqlGatewayRestEndpoint;
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestOptions;
 
-import org.apache.hadoop.minikdc.MiniKdc;
-import org.apache.hadoop.security.authentication.util.KerberosUtil;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.apache.hadoop.minikdc.MiniKdc;
+import org.apache.hadoop.security.authentication.util.KerberosUtil;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -115,8 +114,7 @@ class SqlGatewaySpnegoITCase {
                             .post(RequestBody.create(JSON, "{}")));
 
             loginContext =
-                    loginFromKeytab(
-                            CLIENT_PRINCIPAL_NAME + "@" + kdc.getRealm(), clientKeytab);
+                    loginFromKeytab(CLIENT_PRINCIPAL_NAME + "@" + kdc.getRealm(), clientKeytab);
             try (Response infoResponse =
                     spnegoRequest(
                             httpClient,

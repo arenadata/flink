@@ -175,8 +175,7 @@ final class SqlGatewayRestAuthenticationConfig {
                         String.format(
                                 "Could not read SQL Gateway REST authentication secret file configured by '%s'.",
                                 fullKey(
-                                        SqlGatewayRestOptions
-                                                .AUTHENTICATION_SIGNATURE_SECRET_FILE
+                                        SqlGatewayRestOptions.AUTHENTICATION_SIGNATURE_SECRET_FILE
                                                 .key())),
                         e);
             }
@@ -187,7 +186,8 @@ final class SqlGatewayRestAuthenticationConfig {
         return randomSecret;
     }
 
-    private static void requireNonEmpty(String value, String localKey) throws ConfigurationException {
+    private static void requireNonEmpty(String value, String localKey)
+            throws ConfigurationException {
         if (StringUtils.isNullOrWhitespaceOnly(value)) {
             throw new ConfigurationException(
                     String.format(

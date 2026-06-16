@@ -138,18 +138,17 @@ public class HistoryServerOptions {
                                             + "REST endpoints.");
 
     /** Kerberos principal for HistoryServer SPNEGO authentication. */
-    public static final ConfigOption<String>
-            HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL =
-                    key("historyserver.web.authentication.kerberos.principal")
-                            .stringType()
-                            .noDefaultValue()
-                            .withDescription(
-                                    "Kerberos principal for HistoryServer SPNEGO authentication. "
-                                            + "Required when HistoryServer web authentication type "
-                                            + "is KERBEROS. The principal must start with HTTP/. "
-                                            + "The _HOST placeholder is replaced with the local "
-                                            + "hostname. Use * to accept all HTTP principals in the "
-                                            + "keytab.");
+    public static final ConfigOption<String> HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL =
+            key("historyserver.web.authentication.kerberos.principal")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Kerberos principal for HistoryServer SPNEGO authentication. "
+                                    + "Required when HistoryServer web authentication type "
+                                    + "is KERBEROS. The principal must start with HTTP/. "
+                                    + "The _HOST placeholder is replaced with the local "
+                                    + "hostname. Use * to accept all HTTP principals in the "
+                                    + "keytab.");
 
     /** Kerberos keytab for HistoryServer SPNEGO authentication. */
     public static final ConfigOption<String> HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_KEYTAB =

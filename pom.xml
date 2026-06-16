@@ -430,6 +430,12 @@ under the License.
 
 			<dependency>
 				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-annotations</artifactId>
+				<version>${flink.hadoop.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
 				<artifactId>hadoop-auth</artifactId>
 				<version>${flink.hadoop.version}</version>
 				<exclusions>

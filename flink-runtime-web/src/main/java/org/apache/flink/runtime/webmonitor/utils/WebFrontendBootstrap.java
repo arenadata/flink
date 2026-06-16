@@ -130,15 +130,16 @@ public class WebFrontendBootstrap {
                                             serverSSLFactory.createNettySSLHandler(ch.alloc()));
                         }
 
+                        ch.pipeline().addLast(new HttpServerCodec());
+
+                        historyServerWebAuthenticationHandlerFactory.ifPresent(
+                                factory -> ch.pipeline().addLast(factory.createHandler()));
+
                         ch.pipeline()
-                                .addLast(new HttpServerCodec())
                                 .addLast(new HttpRequestHandler(uploadDir))
                                 .addLast(
                                         new FlinkHttpObjectAggregator(
                                                 maxContentLength, responseHeaders));
-
-                        historyServerWebAuthenticationHandlerFactory.ifPresent(
-                                factory -> ch.pipeline().addLast(factory.createHandler()));
 
                         for (InboundChannelHandlerFactory factory :
                                 inboundChannelHandlerFactories) {

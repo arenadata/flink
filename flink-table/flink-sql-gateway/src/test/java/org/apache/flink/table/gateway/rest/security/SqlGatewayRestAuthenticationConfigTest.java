@@ -64,9 +64,7 @@ class SqlGatewayRestAuthenticationConfigTest {
         set(configuration, SqlGatewayRestOptions.AUTHENTICATION_KERBEROS_KEYTAB.key(), "/tmp/a");
 
         assertThatThrownBy(
-                        () ->
-                                SqlGatewayRestAuthenticationConfig.fromConfiguration(
-                                        configuration))
+                        () -> SqlGatewayRestAuthenticationConfig.fromConfiguration(configuration))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("authentication.kerberos.principal");
     }
@@ -81,9 +79,7 @@ class SqlGatewayRestAuthenticationConfigTest {
                 "HTTP/localhost@EXAMPLE.COM");
 
         assertThatThrownBy(
-                        () ->
-                                SqlGatewayRestAuthenticationConfig.fromConfiguration(
-                                        configuration))
+                        () -> SqlGatewayRestAuthenticationConfig.fromConfiguration(configuration))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("authentication.kerberos.keytab");
     }
@@ -107,9 +103,7 @@ class SqlGatewayRestAuthenticationConfigTest {
                 secretFile.toString());
 
         assertThatThrownBy(
-                        () ->
-                                SqlGatewayRestAuthenticationConfig.fromConfiguration(
-                                        configuration))
+                        () -> SqlGatewayRestAuthenticationConfig.fromConfiguration(configuration))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("signature.secret")
                 .hasMessageContaining("signature.secret-file");
@@ -150,9 +144,7 @@ class SqlGatewayRestAuthenticationConfigTest {
         set(configuration, SqlGatewayRestOptions.AUTHENTICATION_TYPE.key(), "BASIC");
 
         assertThatThrownBy(
-                        () ->
-                                SqlGatewayRestAuthenticationConfig.fromConfiguration(
-                                        configuration))
+                        () -> SqlGatewayRestAuthenticationConfig.fromConfiguration(configuration))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("BASIC");
     }

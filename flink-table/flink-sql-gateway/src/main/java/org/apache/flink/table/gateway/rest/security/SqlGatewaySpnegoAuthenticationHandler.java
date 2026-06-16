@@ -38,7 +38,6 @@ import org.apache.flink.shaded.netty4.io.netty.util.ReferenceCountUtil;
 
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,13 +95,11 @@ final class SqlGatewaySpnegoAuthenticationHandler extends ChannelDuplexHandler {
 
         try {
             SqlGatewaySpnegoAuthenticationResult result =
-                    authenticator.authenticate(request.headers().get(HttpHeaderNames.AUTHORIZATION));
+                    authenticator.authenticate(
+                            request.headers().get(HttpHeaderNames.AUTHORIZATION));
             if (!result.isAuthenticated()) {
                 sendResponse(
-                        ctx,
-                        request,
-                        HttpResponseStatus.UNAUTHORIZED,
-                        result.authenticateHeader());
+                        ctx, request, HttpResponseStatus.UNAUTHORIZED, result.authenticateHeader());
                 return;
             }
 
@@ -159,8 +156,7 @@ final class SqlGatewaySpnegoAuthenticationHandler extends ChannelDuplexHandler {
             HttpResponseStatus status,
             @Nullable String authenticateHeader) {
         FullHttpResponse response =
-                new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, status, Unpooled.EMPTY_BUFFER);
+                new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status, Unpooled.EMPTY_BUFFER);
         responseHeaders.forEach((name, value) -> response.headers().set(name, value));
         response.headers().set(HttpHeaderNames.CONTENT_LENGTH, 0);
         if (authenticateHeader != null) {

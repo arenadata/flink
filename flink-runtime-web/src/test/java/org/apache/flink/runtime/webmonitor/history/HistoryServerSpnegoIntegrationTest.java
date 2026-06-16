@@ -29,7 +29,6 @@ import org.apache.flink.runtime.security.KerberosUtils;
 import org.apache.flink.test.util.SecureTestEnvironment;
 
 import org.apache.hadoop.security.authentication.client.KerberosAuthenticator;
-
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
@@ -171,8 +170,7 @@ class HistoryServerSpnegoIntegrationTest {
                                 gssContext.requestCredDeleg(true);
                                 gssContext.requestMutualAuth(true);
 
-                                byte[] outToken =
-                                        gssContext.initSecContext(new byte[0], 0, 0);
+                                byte[] outToken = gssContext.initSecContext(new byte[0], 0, 0);
                                 assertThat(outToken).isNotNull();
 
                                 RawHttpResponse response =
@@ -239,13 +237,11 @@ class HistoryServerSpnegoIntegrationTest {
                         (CallbackHandler) null,
                         new javax.security.auth.login.Configuration() {
                             @Override
-                            public AppConfigurationEntry[] getAppConfigurationEntry(
-                                    String name) {
+                            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
                                 return new AppConfigurationEntry[] {
                                     KerberosUtils.keytabEntry(
                                             SecureTestEnvironment.getTestKeytab(),
-                                            "client/localhost@"
-                                                    + SecureTestEnvironment.getRealm())
+                                            "client/localhost@" + SecureTestEnvironment.getRealm())
                                 };
                             }
                         });

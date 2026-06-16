@@ -30,7 +30,6 @@ import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpVersion;
 
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
-
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -50,7 +49,9 @@ class SqlGatewaySpnegoAuthenticationHandlerTest {
     @Test
     void shouldChallengeUnauthenticatedRequest() {
         EmbeddedChannel channel =
-                channel(authorization -> SqlGatewaySpnegoAuthenticationResult.challenge("Negotiate"));
+                channel(
+                        authorization ->
+                                SqlGatewaySpnegoAuthenticationResult.challenge("Negotiate"));
 
         channel.writeInbound(request());
 
@@ -92,7 +93,9 @@ class SqlGatewaySpnegoAuthenticationHandlerTest {
         SqlGatewayAuthenticationTokenSigner signer = signer(NOW);
         String signedToken = signer.signToken("alice", "alice@EXAMPLE.COM");
         EmbeddedChannel channel =
-                channel(authorization -> SqlGatewaySpnegoAuthenticationResult.challenge("Negotiate"));
+                channel(
+                        authorization ->
+                                SqlGatewaySpnegoAuthenticationResult.challenge("Negotiate"));
 
         FullHttpRequest request = request();
         request.headers()
@@ -120,12 +123,12 @@ class SqlGatewaySpnegoAuthenticationHandlerTest {
         EmbeddedChannel channel =
                 new EmbeddedChannel(
                         handler(
-                        authorization ->
-                                SqlGatewaySpnegoAuthenticationResult.challenge("Negotiate"),
-                        new SqlGatewayAuthenticationTokenSigner(
-                                SECRET,
-                                Duration.ofMillis(1),
-                                Clock.offset(NOW, Duration.ofMillis(2)))));
+                                authorization ->
+                                        SqlGatewaySpnegoAuthenticationResult.challenge("Negotiate"),
+                                new SqlGatewayAuthenticationTokenSigner(
+                                        SECRET,
+                                        Duration.ofMillis(1),
+                                        Clock.offset(NOW, Duration.ofMillis(2)))));
 
         FullHttpRequest request = request();
         request.headers()

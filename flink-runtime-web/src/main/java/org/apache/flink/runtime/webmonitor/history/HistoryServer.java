@@ -325,6 +325,9 @@ public class HistoryServer {
                                             new GeneratedLogUrlHandler(
                                                     CompletableFuture.completedFuture(pattern))));
 
+            router.addGet(
+                    HistoryServerAuthenticatedUserHandler.URL,
+                    new HistoryServerAuthenticatedUserHandler());
             router.addGet("/:*", new HistoryServerStaticFileServerHandler(webDir));
 
             createDashboardConfigFile();

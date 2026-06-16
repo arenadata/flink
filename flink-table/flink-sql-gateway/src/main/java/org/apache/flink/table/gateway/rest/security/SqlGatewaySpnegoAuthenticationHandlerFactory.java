@@ -20,8 +20,9 @@ package org.apache.flink.table.gateway.rest.security;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.io.network.netty.InboundChannelHandlerFactory;
-import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandler;
 import org.apache.flink.util.ConfigurationException;
+
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandler;
 
 import java.time.Clock;
 import java.util.Map;

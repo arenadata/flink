@@ -95,7 +95,10 @@ final class HistoryServerAuthenticationTokenSigner {
     }
 
     private static String stripQuotes(String value) {
-        if (value != null && value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+        if (value != null
+                && value.length() >= 2
+                && value.startsWith("\"")
+                && value.endsWith("\"")) {
             return value.substring(1, value.length() - 1);
         }
         return value;

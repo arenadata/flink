@@ -22,7 +22,6 @@ import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
 import org.apache.hadoop.security.authentication.util.Signer;
 import org.apache.hadoop.security.authentication.util.SignerSecretProvider;
-
 import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletContext;
@@ -43,7 +42,8 @@ class HistoryServerSpnegoTokenSignerTest {
         AuthenticationToken token = createToken(System.currentTimeMillis() + 60_000L);
 
         String signedToken = new HistoryServerAuthenticationTokenSigner(SECRET).sign(token);
-        String hadoopSignedToken = new Signer(new StaticSecretProvider(SECRET)).sign(token.toString());
+        String hadoopSignedToken =
+                new Signer(new StaticSecretProvider(SECRET)).sign(token.toString());
 
         assertThat(signedToken).isEqualTo(hadoopSignedToken);
         assertThat(new Signer(new StaticSecretProvider(SECRET)).verifyAndExtract(signedToken))

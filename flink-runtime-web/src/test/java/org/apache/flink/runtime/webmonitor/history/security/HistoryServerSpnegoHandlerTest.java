@@ -22,25 +22,33 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.HistoryServerOptions;
 import org.apache.flink.configuration.HistoryServerOptions.HistoryServerWebAuthenticationType;
 
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandlerContext;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.flink.shaded.netty4.io.netty.channel.embedded.EmbeddedChannel;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.DefaultFullHttpRequest;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.DefaultHttpRequest;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.DefaultLastHttpContent;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.FullHttpRequest;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.FullHttpResponse;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpHeaderNames;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpMethod;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpRequest;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpVersion;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.LastHttpContent;
+import org.apache.flink.shaded.netty4.io.netty.util.ReferenceCountUtil;
 
 import org.apache.hadoop.security.authentication.client.AuthenticatedURL;
 import org.apache.hadoop.security.authentication.client.KerberosAuthenticator;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -75,6 +83,26 @@ class HistoryServerSpnegoHandlerTest {
                                             .startsWith(AuthenticatedURL.AUTH_COOKIE + "=")
                                             .contains("Max-Age=0")
                                             .contains("HttpOnly"));
+            response.release();
+        } finally {
+            channel.finishAndReleaseAll();
+        }
+    }
+
+    @Test
+    void shouldChallengeUnauthenticatedStreamingRequest() throws Exception {
+        EmbeddedChannel channel = createChannel(false);
+        try {
+            HttpRequest request =
+                    new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/jobs/overview");
+
+            assertThat(channel.writeInbound(request)).isFalse();
+
+            FullHttpResponse response = channel.readOutbound();
+            assertThat(response.status()).isEqualTo(HttpResponseStatus.UNAUTHORIZED);
+            assertThat(response.headers().get(HttpHeaderNames.WWW_AUTHENTICATE))
+                    .isEqualTo(KerberosAuthenticator.NEGOTIATE);
+            assertThat((Object) channel.readInbound()).isNull();
             response.release();
         } finally {
             channel.finishAndReleaseAll();
@@ -130,6 +158,91 @@ class HistoryServerSpnegoHandlerTest {
     }
 
     @Test
+    void shouldExposeAuthenticatedUserWhileHandlingRequestWithValidSignedCookie() throws Exception {
+        AtomicReference<Optional<HistoryServerAuthenticatedUser>> authenticatedUser =
+                new AtomicReference<>(Optional.empty());
+        EmbeddedChannel channel =
+                createChannel(
+                        false,
+                        new ChannelInboundHandlerAdapter() {
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                                authenticatedUser.set(
+                                        HistoryServerWebAuthenticationHandler.getAuthenticatedUser(
+                                                ctx));
+                                ReferenceCountUtil.release(msg);
+                            }
+                        });
+        FullHttpRequest request = getRequest();
+        request.headers()
+                .set(
+                        HttpHeaderNames.COOKIE,
+                        AuthenticatedURL.AUTH_COOKIE
+                                + "=\""
+                                + createSignedCookie(System.currentTimeMillis() + 60_000L)
+                                + "\"");
+
+        try {
+            assertThat(channel.writeInbound(request)).isFalse();
+            assertThat(authenticatedUser.get())
+                    .hasValueSatisfying(
+                            user -> {
+                                assertThat(user.getUserName()).isEqualTo("alice");
+                                assertThat(user.getPrincipal()).isEqualTo("alice@EXAMPLE.COM");
+                                assertThat(user.getType())
+                                        .isEqualTo(HistoryServerSpnegoAuthenticator.TOKEN_TYPE);
+                            });
+        } finally {
+            channel.finishAndReleaseAll();
+        }
+    }
+
+    @Test
+    void shouldKeepAuthenticatedUserUntilEndOfStreamingRequest() throws Exception {
+        AtomicReference<Optional<HistoryServerAuthenticatedUser>> userDuringRequest =
+                new AtomicReference<>(Optional.empty());
+        AtomicReference<Optional<HistoryServerAuthenticatedUser>> userDuringLastContent =
+                new AtomicReference<>(Optional.empty());
+        EmbeddedChannel channel =
+                createChannel(
+                        false,
+                        new ChannelInboundHandlerAdapter() {
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                                if (msg instanceof HttpRequest) {
+                                    userDuringRequest.set(
+                                            HistoryServerWebAuthenticationHandler
+                                                    .getAuthenticatedUser(ctx));
+                                } else if (msg instanceof LastHttpContent) {
+                                    userDuringLastContent.set(
+                                            HistoryServerWebAuthenticationHandler
+                                                    .getAuthenticatedUser(ctx));
+                                }
+                                ReferenceCountUtil.release(msg);
+                            }
+                        });
+        HttpRequest request =
+                new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/auth/user");
+        request.headers()
+                .set(
+                        HttpHeaderNames.COOKIE,
+                        AuthenticatedURL.AUTH_COOKIE
+                                + "=\""
+                                + createSignedCookie(System.currentTimeMillis() + 60_000L)
+                                + "\"");
+
+        try {
+            assertThat(channel.writeInbound(request)).isFalse();
+            assertThat(channel.writeInbound(new DefaultLastHttpContent())).isFalse();
+
+            assertThat(userDuringRequest.get()).isPresent();
+            assertThat(userDuringLastContent.get()).isPresent();
+        } finally {
+            channel.finishAndReleaseAll();
+        }
+    }
+
+    @Test
     void shouldRestartSpnegoChallengeForExpiredCookie() throws Exception {
         EmbeddedChannel channel = createChannel(false);
         FullHttpRequest request = getRequest();
@@ -170,11 +283,16 @@ class HistoryServerSpnegoHandlerTest {
     }
 
     private EmbeddedChannel createChannel(boolean secureCookie) throws Exception {
+        return createChannel(secureCookie, new ChannelInboundHandlerAdapter());
+    }
+
+    private EmbeddedChannel createChannel(
+            boolean secureCookie, ChannelInboundHandlerAdapter tailHandler) throws Exception {
         HistoryServerWebAuthenticationHandler.Factory factory =
                 HistoryServerWebAuthenticationHandler.createFactory(
                                 createKerberosConfiguration(), secureCookie)
                         .orElseThrow();
-        return new EmbeddedChannel(factory.createHandler());
+        return new EmbeddedChannel(factory.createHandler(), tailHandler);
     }
 
     private Configuration createKerberosConfiguration() throws Exception {
@@ -195,8 +313,7 @@ class HistoryServerSpnegoHandlerTest {
     }
 
     private static FullHttpRequest getRequest() {
-        return new DefaultFullHttpRequest(
-                HttpVersion.HTTP_1_1, HttpMethod.GET, "/jobs/overview");
+        return new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/jobs/overview");
     }
 
     private static String createSignedCookie(long expires) {

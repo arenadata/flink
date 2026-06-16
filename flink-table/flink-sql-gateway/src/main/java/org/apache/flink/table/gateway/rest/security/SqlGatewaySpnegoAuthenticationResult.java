@@ -31,7 +31,8 @@ final class SqlGatewaySpnegoAuthenticationResult {
     @Nullable private final String authenticateHeader;
 
     private SqlGatewaySpnegoAuthenticationResult(
-            @Nullable AuthenticationToken authenticationToken, @Nullable String authenticateHeader) {
+            @Nullable AuthenticationToken authenticationToken,
+            @Nullable String authenticateHeader) {
         this.authenticationToken = authenticationToken;
         this.authenticateHeader = authenticateHeader;
     }

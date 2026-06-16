@@ -31,29 +31,44 @@ final class HistoryServerAuthenticationResult {
 
     private final Status status;
     private final Optional<String> userName;
+    private final Optional<String> principal;
+    private final Optional<String> type;
     private final Optional<String> negotiateToken;
     private final Optional<String> signedCookie;
 
     private HistoryServerAuthenticationResult(
             Status status,
             Optional<String> userName,
+            Optional<String> principal,
+            Optional<String> type,
             Optional<String> negotiateToken,
             Optional<String> signedCookie) {
         this.status = status;
         this.userName = userName;
+        this.principal = principal;
+        this.type = type;
         this.negotiateToken = negotiateToken;
         this.signedCookie = signedCookie;
     }
 
-    static HistoryServerAuthenticationResult authenticated(String userName) {
-        return new HistoryServerAuthenticationResult(
-                Status.AUTHENTICATED, Optional.of(userName), Optional.empty(), Optional.empty());
-    }
-
-    static HistoryServerAuthenticationResult authenticated(String userName, String signedCookie) {
+    static HistoryServerAuthenticationResult authenticated(
+            String userName, String principal, String type) {
         return new HistoryServerAuthenticationResult(
                 Status.AUTHENTICATED,
                 Optional.of(userName),
+                Optional.of(principal),
+                Optional.of(type),
+                Optional.empty(),
+                Optional.empty());
+    }
+
+    static HistoryServerAuthenticationResult authenticated(
+            String userName, String principal, String type, String signedCookie) {
+        return new HistoryServerAuthenticationResult(
+                Status.AUTHENTICATED,
+                Optional.of(userName),
+                Optional.of(principal),
+                Optional.of(type),
                 Optional.empty(),
                 Optional.of(signedCookie));
     }
@@ -64,12 +79,22 @@ final class HistoryServerAuthenticationResult {
 
     static HistoryServerAuthenticationResult unauthorized(Optional<String> negotiateToken) {
         return new HistoryServerAuthenticationResult(
-                Status.UNAUTHORIZED, Optional.empty(), negotiateToken, Optional.empty());
+                Status.UNAUTHORIZED,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                negotiateToken,
+                Optional.empty());
     }
 
     static HistoryServerAuthenticationResult forbidden() {
         return new HistoryServerAuthenticationResult(
-                Status.FORBIDDEN, Optional.empty(), Optional.empty(), Optional.empty());
+                Status.FORBIDDEN,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
     }
 
     Status getStatus() {
@@ -78,6 +103,14 @@ final class HistoryServerAuthenticationResult {
 
     Optional<String> getUserName() {
         return userName;
+    }
+
+    Optional<String> getPrincipal() {
+        return principal;
+    }
+
+    Optional<String> getType() {
+        return type;
     }
 
     Optional<String> getNegotiateToken() {

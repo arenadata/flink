@@ -19,7 +19,6 @@
 package org.apache.flink.table.gateway.rest.security;
 
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
-
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;

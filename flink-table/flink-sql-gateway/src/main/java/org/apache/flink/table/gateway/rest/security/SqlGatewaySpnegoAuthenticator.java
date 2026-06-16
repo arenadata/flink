@@ -29,15 +29,14 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.Oid;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KeyTab;
-import javax.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,12 +154,13 @@ final class SqlGatewaySpnegoAuthenticator implements SpnegoAuthenticator {
     }
 
     private SqlGatewaySpnegoAuthenticationResult runWithPrincipal(
-            String serverPrincipal, byte[] clientToken)
-            throws GSSException, IOException {
+            String serverPrincipal, byte[] clientToken) throws GSSException, IOException {
         GSSContext gssContext = null;
         GSSCredential gssCredential = null;
         try {
-            LOG.trace("Starting SQL Gateway REST SPNEGO step for server principal {}.", serverPrincipal);
+            LOG.trace(
+                    "Starting SQL Gateway REST SPNEGO step for server principal {}.",
+                    serverPrincipal);
             gssCredential =
                     gssManager.createCredential(
                             gssManager.createName(
@@ -171,8 +171,7 @@ final class SqlGatewaySpnegoAuthenticator implements SpnegoAuthenticator {
                             },
                             GSSCredential.ACCEPT_ONLY);
             gssContext = gssManager.createContext(gssCredential);
-            byte[] serverToken =
-                    gssContext.acceptSecContext(clientToken, 0, clientToken.length);
+            byte[] serverToken = gssContext.acceptSecContext(clientToken, 0, clientToken.length);
             String authenticateHeader = createAuthenticateHeader(serverToken);
 
             if (!gssContext.isEstablished()) {
@@ -191,8 +190,7 @@ final class SqlGatewaySpnegoAuthenticator implements SpnegoAuthenticator {
                             clientPrincipal,
                             SqlGatewayAuthenticationTokenSigner.TOKEN_TYPE_KERBEROS);
             LOG.trace(
-                    "SQL Gateway REST SPNEGO completed for client principal {}.",
-                    clientPrincipal);
+                    "SQL Gateway REST SPNEGO completed for client principal {}.", clientPrincipal);
             return SqlGatewaySpnegoAuthenticationResult.authenticated(token, authenticateHeader);
         } finally {
             if (gssContext != null) {
@@ -284,11 +282,13 @@ final class SqlGatewaySpnegoAuthenticator implements SpnegoAuthenticator {
                 }
             }
             serverSubject.getPrincipals().add(kerberosPrincipal);
-            LOG.info("Using SQL Gateway REST SPNEGO keytab {} for principal {}.", keytabPath, principal);
+            LOG.info(
+                    "Using SQL Gateway REST SPNEGO keytab {} for principal {}.",
+                    keytabPath,
+                    principal);
         } catch (IllegalArgumentException e) {
             throw new ConfigurationException(
-                    "Invalid SQL Gateway REST authentication Kerberos principal: " + principal,
-                    e);
+                    "Invalid SQL Gateway REST authentication Kerberos principal: " + principal, e);
         } catch (javax.security.auth.DestroyFailedException e) {
             throw new ConfigurationException(
                     "Could not validate SQL Gateway REST authentication Kerberos keytab.", e);

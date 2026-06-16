@@ -24,8 +24,8 @@ import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.table.gateway.api.endpoint.SqlGatewayEndpoint;
 import org.apache.flink.table.gateway.api.endpoint.SqlGatewayEndpointFactory;
 import org.apache.flink.table.gateway.api.endpoint.SqlGatewayEndpointFactoryUtils;
-import org.apache.flink.table.gateway.rest.security.SqlGatewaySpnegoAuthenticationHandlerFactory;
 import org.apache.flink.table.gateway.api.utils.SqlGatewayException;
+import org.apache.flink.table.gateway.rest.security.SqlGatewaySpnegoAuthenticationHandlerFactory;
 
 import java.util.HashSet;
 import java.util.Map;

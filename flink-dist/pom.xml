@@ -695,7 +695,7 @@ under the License.
 								<excludes>
 									<!-- log4j 2 is bundled separately from the flink-dist jar -->
 									<exclude>org.apache.logging.log4j:*</exclude>
-									<!-- Bundled and relocated inside flink-runtime-web for SPNEGO support. -->
+									<!-- Bundled and relocated inside runtime modules for SPNEGO support. -->
 									<exclude>org.apache.hadoop:hadoop-auth</exclude>
 									<exclude>org.apache.hadoop.thirdparty:hadoop-shaded-guava</exclude>
 								</excludes>

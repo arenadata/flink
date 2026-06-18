@@ -25,12 +25,16 @@ import org.apache.flink.runtime.rest.handler.AbstractRestHandler;
 import org.apache.flink.runtime.rest.handler.RestHandlerSpecification;
 import org.apache.flink.util.ConfigurationException;
 
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandler;
 import org.apache.flink.shaded.netty4.io.netty.channel.ChannelInboundHandler;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /** Utility {@link RestServerEndpoint} for setting up a rest server with a given set of handlers. */
 public class TestRestServerEndpoint extends RestServerEndpoint {
@@ -46,6 +50,8 @@ public class TestRestServerEndpoint extends RestServerEndpoint {
 
         private final Configuration configuration;
         private final List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers =
+                new ArrayList<>();
+        private final List<Supplier<ChannelHandler>> endpointSpecificChannelHandlerFactories =
                 new ArrayList<>();
 
         private Builder(Configuration configuration) {
@@ -63,8 +69,20 @@ public class TestRestServerEndpoint extends RestServerEndpoint {
             return this;
         }
 
+        public Builder withEndpointSpecificChannelHandler(ChannelHandler channelHandler) {
+            this.endpointSpecificChannelHandlerFactories.add(() -> channelHandler);
+            return this;
+        }
+
+        public Builder withEndpointSpecificChannelHandlerFactory(
+                Supplier<ChannelHandler> channelHandlerFactory) {
+            this.endpointSpecificChannelHandlerFactories.add(channelHandlerFactory);
+            return this;
+        }
+
         public TestRestServerEndpoint build() throws IOException, ConfigurationException {
-            return new TestRestServerEndpoint(configuration, handlers);
+            return new TestRestServerEndpoint(
+                    configuration, handlers, endpointSpecificChannelHandlerFactories);
         }
 
         public TestRestServerEndpoint buildAndStart() throws Exception {
@@ -76,19 +94,29 @@ public class TestRestServerEndpoint extends RestServerEndpoint {
     }
 
     private final List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers;
+    private final List<Supplier<ChannelHandler>> endpointSpecificChannelHandlerFactories;
 
     private TestRestServerEndpoint(
             final Configuration configuration,
-            final List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers)
+            final List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers,
+            final List<Supplier<ChannelHandler>> endpointSpecificChannelHandlerFactories)
             throws IOException, ConfigurationException {
         super(configuration);
         this.handlers = handlers;
+        this.endpointSpecificChannelHandlerFactories = endpointSpecificChannelHandlerFactories;
     }
 
     @Override
     protected List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> initializeHandlers(
             final CompletableFuture<String> ignore) {
         return this.handlers;
+    }
+
+    @Override
+    protected Collection<ChannelHandler> createEndpointSpecificChannelHandlers() {
+        return endpointSpecificChannelHandlerFactories.stream()
+                .map(Supplier::get)
+                .collect(Collectors.toList());
     }
 
     @Override

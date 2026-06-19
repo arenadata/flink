@@ -96,11 +96,9 @@ export class AppComponent {
     private httpClient: HttpClient,
     private configService: ConfigService
   ) {
-    this.authenticatedUser$ = this.historyServerEnv
-      ? this.httpClient.get<AuthenticatedUser>(`${this.configService.BASE_URL}/auth/user`).pipe(
-          catchError(() => of({ authenticated: false })),
-          shareReplay({ bufferSize: 1, refCount: true })
-        )
-      : of({ authenticated: false });
+    this.authenticatedUser$ = this.httpClient.get<AuthenticatedUser>(`${this.configService.BASE_URL}/auth/user`).pipe(
+      catchError(() => of({ authenticated: false })),
+      shareReplay({ bufferSize: 1, refCount: true })
+    );
   }
 }

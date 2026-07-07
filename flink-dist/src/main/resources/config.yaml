@@ -186,6 +186,24 @@ rest:
   # bind-port: 8080-8090
 
 # web:
+#   authentication:
+#     # Optional Kerberos/SPNEGO authentication for the JobManager Web UI and
+#     # REST endpoint on port 8081. The default authentication type is NONE.
+#     # Exposing this endpoint without authentication allows unauthenticated job
+#     # submission and control operations.
+#     type: KERBEROS
+#     kerberos:
+#       principal: HTTP/_HOST@EXAMPLE.COM
+#       keytab: /etc/security/keytabs/flink-jobmanager-http.keytab
+#       # name-rules: DEFAULT
+#     token:
+#       validity: 10 h
+#     cookie:
+#       path: /
+#     signature:
+#       # Configure the same secret file for all JobManager instances that
+#       # should accept each other's authentication cookies.
+#       secret-file: /etc/flink/jobmanager-web-auth-secret
 #   submit:
 #     # Flag to specify whether job submission is enabled from the web-based
 #     # runtime monitor. Uncomment to disable.

@@ -170,6 +170,15 @@ public abstract class RestServerEndpoint implements RestService {
             initializeHandlers(final CompletableFuture<String> localAddressFuture);
 
     /**
+     * Creates endpoint-specific Netty handlers that run after request aggregation and before
+     * service-loaded inbound handlers and routing.
+     */
+    protected Collection<ChannelHandler> createEndpointSpecificChannelHandlers()
+            throws ConfigurationException {
+        return Collections.emptyList();
+    }
+
+    /**
      * Starts this REST server endpoint.
      *
      * @throws Exception if we cannot start the RestServerEndpoint
@@ -225,6 +234,11 @@ public abstract class RestServerEndpoint implements RestService {
                                     .addLast(
                                             new FlinkHttpObjectAggregator(
                                                     maxContentLength, responseHeaders));
+
+                            for (ChannelHandler channelHandler :
+                                    createEndpointSpecificChannelHandlers()) {
+                                ch.pipeline().addLast(channelHandler);
+                            }
 
                             for (InboundChannelHandlerFactory factory :
                                     inboundChannelHandlerFactories) {

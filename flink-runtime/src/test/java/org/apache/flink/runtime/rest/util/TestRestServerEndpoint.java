@@ -51,6 +51,8 @@ public class TestRestServerEndpoint extends RestServerEndpoint {
         private final Configuration configuration;
         private final List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers =
                 new ArrayList<>();
+        private final List<Supplier<ChannelHandler>> preFileUploadChannelHandlerFactories =
+                new ArrayList<>();
         private final List<Supplier<ChannelHandler>> endpointSpecificChannelHandlerFactories =
                 new ArrayList<>();
 
@@ -80,9 +82,18 @@ public class TestRestServerEndpoint extends RestServerEndpoint {
             return this;
         }
 
+        public Builder withEndpointSpecificPreFileUploadChannelHandlerFactory(
+                Supplier<ChannelHandler> channelHandlerFactory) {
+            this.preFileUploadChannelHandlerFactories.add(channelHandlerFactory);
+            return this;
+        }
+
         public TestRestServerEndpoint build() throws IOException, ConfigurationException {
             return new TestRestServerEndpoint(
-                    configuration, handlers, endpointSpecificChannelHandlerFactories);
+                    configuration,
+                    handlers,
+                    preFileUploadChannelHandlerFactories,
+                    endpointSpecificChannelHandlerFactories);
         }
 
         public TestRestServerEndpoint buildAndStart() throws Exception {
@@ -94,15 +105,18 @@ public class TestRestServerEndpoint extends RestServerEndpoint {
     }
 
     private final List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers;
+    private final List<Supplier<ChannelHandler>> preFileUploadChannelHandlerFactories;
     private final List<Supplier<ChannelHandler>> endpointSpecificChannelHandlerFactories;
 
     private TestRestServerEndpoint(
             final Configuration configuration,
             final List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers,
+            final List<Supplier<ChannelHandler>> preFileUploadChannelHandlerFactories,
             final List<Supplier<ChannelHandler>> endpointSpecificChannelHandlerFactories)
             throws IOException, ConfigurationException {
         super(configuration);
         this.handlers = handlers;
+        this.preFileUploadChannelHandlerFactories = preFileUploadChannelHandlerFactories;
         this.endpointSpecificChannelHandlerFactories = endpointSpecificChannelHandlerFactories;
     }
 
@@ -115,6 +129,13 @@ public class TestRestServerEndpoint extends RestServerEndpoint {
     @Override
     protected Collection<ChannelHandler> createEndpointSpecificChannelHandlers() {
         return endpointSpecificChannelHandlerFactories.stream()
+                .map(Supplier::get)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    protected Collection<ChannelHandler> createEndpointSpecificPreFileUploadChannelHandlers() {
+        return preFileUploadChannelHandlerFactories.stream()
                 .map(Supplier::get)
                 .collect(Collectors.toList());
     }

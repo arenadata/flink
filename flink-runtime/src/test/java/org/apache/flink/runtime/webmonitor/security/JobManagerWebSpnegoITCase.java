@@ -22,10 +22,12 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.configuration.WebOptions;
 import org.apache.flink.configuration.WebOptions.WebAuthenticationType;
+import org.apache.flink.runtime.rest.FileUploadHandler;
 import org.apache.flink.runtime.rest.HttpMethodWrapper;
 import org.apache.flink.runtime.rest.messages.EmptyMessageParameters;
 import org.apache.flink.runtime.rest.messages.EmptyRequestBody;
 import org.apache.flink.runtime.rest.messages.EmptyResponseBody;
+import org.apache.flink.runtime.rest.messages.RuntimeMessageHeaders;
 import org.apache.flink.runtime.rest.util.TestMessageHeaders;
 import org.apache.flink.runtime.rest.util.TestRestHandler;
 import org.apache.flink.runtime.rest.util.TestRestServerEndpoint;
@@ -34,7 +36,10 @@ import org.apache.flink.runtime.webmonitor.RestfulGateway;
 import org.apache.flink.runtime.webmonitor.TestingRestfulGateway;
 import org.apache.flink.runtime.webmonitor.retriever.GatewayRetriever;
 
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpResponseStatus;
+
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -53,6 +58,7 @@ import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.LoginContext;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.PrivilegedExceptionAction;
@@ -60,6 +66,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -118,15 +126,31 @@ class JobManagerWebSpnegoITCase {
                                     jobsOverviewHeaders,
                                     CompletableFuture.completedFuture(
                                             EmptyResponseBody.getInstance()));
+            TestUploadHeaders uploadHeaders = TestUploadHeaders.INSTANCE;
+            TestRestHandler<
+                            RestfulGateway,
+                            EmptyRequestBody,
+                            EmptyResponseBody,
+                            EmptyMessageParameters>
+                    uploadHandler =
+                            new TestRestHandler<>(
+                                    gatewayRetriever,
+                                    uploadHeaders,
+                                    CompletableFuture.completedFuture(
+                                            EmptyResponseBody.getInstance()));
 
             try (TestRestServerEndpoint endpoint =
                     TestRestServerEndpoint.builder(configuration)
+                            .withEndpointSpecificPreFileUploadChannelHandlerFactory(
+                                    authenticationHandlerFactory::createPreFileUploadHandler)
                             .withEndpointSpecificChannelHandlerFactory(
                                     authenticationHandlerFactory::createHandler)
                             .withHandler(jobsOverviewHeaders, jobsOverviewHandler)
+                            .withHandler(uploadHeaders, uploadHandler)
                             .build()) {
                 endpoint.start();
                 String baseUrl = getBaseUrl(endpoint);
+                Path uploadDir = tempDir.resolve("uploads");
 
                 OkHttpClient httpClient = new OkHttpClient();
                 assertSpnegoChallenge(
@@ -136,6 +160,8 @@ class JobManagerWebSpnegoITCase {
                         new Request.Builder()
                                 .url(baseUrl + "/jars/upload")
                                 .post(RequestBody.create(JSON, "{}")));
+                assertUnauthenticatedMultipartUploadRejectedBeforeUpload(
+                        httpClient, baseUrl, uploadDir);
 
                 loginContext =
                         loginFromKeytab(CLIENT_PRINCIPAL_NAME + "@" + kdc.getRealm(), clientKeytab);
@@ -148,6 +174,17 @@ class JobManagerWebSpnegoITCase {
                     assertThat(jobsOverviewResponse.header("Set-Cookie"))
                             .contains(AuthenticatedURL.AUTH_COOKIE + "=");
                 }
+                try (Response uploadResponse =
+                        spnegoRequest(
+                                httpClient,
+                                new Request.Builder()
+                                        .url(baseUrl + "/jars/upload")
+                                        .post(multipartUploadBody()),
+                                loginContext.getSubject())) {
+                    assertThat(uploadResponse.code()).isEqualTo(200);
+                    assertThat(uploadResponse.header("Set-Cookie"))
+                            .contains(AuthenticatedURL.AUTH_COOKIE + "=");
+                }
             }
         } finally {
             if (loginContext != null) {
@@ -158,6 +195,32 @@ class JobManagerWebSpnegoITCase {
             }
             restoreKerberosProperties(previousProperties);
         }
+    }
+
+    private static void assertUnauthenticatedMultipartUploadRejectedBeforeUpload(
+            OkHttpClient httpClient, String baseUrl, Path uploadDir) throws Exception {
+        assertSpnegoChallenge(
+                httpClient,
+                new Request.Builder().url(baseUrl + "/jars/upload").post(multipartUploadBody()));
+        Path flinkUploadDir = uploadDir.resolve("flink-web-upload");
+        if (Files.exists(flinkUploadDir)) {
+            try (Stream<Path> children = Files.list(flinkUploadDir)) {
+                assertThat(children.collect(Collectors.toList())).isEmpty();
+            }
+        }
+    }
+
+    private static RequestBody multipartUploadBody() {
+        return new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart(
+                        "jarfile",
+                        "test-job.jar",
+                        RequestBody.create(
+                                MediaType.parse("application/java-archive"),
+                                "jar-content".getBytes(StandardCharsets.UTF_8)))
+                .addFormDataPart(FileUploadHandler.HTTP_ATTRIBUTE_REQUEST, "{}")
+                .build();
     }
 
     private static Configuration createKerberosConfiguration(Path tempDir, Path serverKeytab) {
@@ -285,6 +348,58 @@ class JobManagerWebSpnegoITCase {
             System.setProperty(key, properties.getProperty(key));
         } else {
             System.clearProperty(key);
+        }
+    }
+
+    private static final class TestUploadHeaders
+            implements RuntimeMessageHeaders<
+                    EmptyRequestBody, EmptyResponseBody, EmptyMessageParameters> {
+
+        private static final TestUploadHeaders INSTANCE = new TestUploadHeaders();
+
+        @Override
+        public Class<EmptyRequestBody> getRequestClass() {
+            return EmptyRequestBody.class;
+        }
+
+        @Override
+        public Class<EmptyResponseBody> getResponseClass() {
+            return EmptyResponseBody.class;
+        }
+
+        @Override
+        public HttpResponseStatus getResponseStatusCode() {
+            return HttpResponseStatus.OK;
+        }
+
+        @Override
+        public EmptyMessageParameters getUnresolvedMessageParameters() {
+            return EmptyMessageParameters.getInstance();
+        }
+
+        @Override
+        public HttpMethodWrapper getHttpMethod() {
+            return HttpMethodWrapper.POST;
+        }
+
+        @Override
+        public String getTargetRestEndpointURL() {
+            return "/jars/upload";
+        }
+
+        @Override
+        public String getDescription() {
+            return "Test upload endpoint.";
+        }
+
+        @Override
+        public String operationId() {
+            return "testUpload";
+        }
+
+        @Override
+        public boolean acceptsFileUploads() {
+            return true;
         }
     }
 }

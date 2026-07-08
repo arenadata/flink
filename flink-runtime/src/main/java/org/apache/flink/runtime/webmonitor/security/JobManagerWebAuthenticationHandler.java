@@ -33,12 +33,16 @@ import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.FullHttpRespon
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpHeaderNames;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpHeaderValues;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpHeaders;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpMethod;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpRequest;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpResponse;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpUtil;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpVersion;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.LastHttpContent;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.cookie.Cookie;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.cookie.ServerCookieDecoder;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import org.apache.flink.shaded.netty4.io.netty.util.AttributeKey;
 import org.apache.flink.shaded.netty4.io.netty.util.ReferenceCountUtil;
 
@@ -67,6 +71,8 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
             AttributeKey.valueOf("jobmanager-web-spnego-response-authentication");
     private static final AttributeKey<JobManagerAuthenticatedUser> AUTHENTICATED_USER =
             AttributeKey.valueOf("jobmanager-web-authenticated-user");
+    private static final AttributeKey<AuthenticationToken> PRE_AUTHENTICATED_TOKEN =
+            AttributeKey.valueOf("jobmanager-web-pre-authenticated-token");
 
     private final SpnegoAuthenticator authenticator;
     private final JobManagerAuthenticationTokenSigner tokenSigner;
@@ -85,6 +91,16 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
         this.cookiePath = checkNotNull(cookiePath);
         this.secureCookie = secureCookie;
         this.responseHeaders = checkNotNull(responseHeaders);
+    }
+
+    static ChannelHandler createPreFileUploadHandler(
+            SpnegoAuthenticator authenticator,
+            JobManagerAuthenticationTokenSigner tokenSigner,
+            String cookiePath,
+            boolean secureCookie,
+            Map<String, String> responseHeaders) {
+        return new PreFileUploadAuthenticationHandler(
+                authenticator, tokenSigner, cookiePath, secureCookie, responseHeaders);
     }
 
     public static Optional<Factory> createFactory(
@@ -106,13 +122,27 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
                         Clock.systemUTC());
 
         return Optional.of(
-                () ->
-                        new JobManagerWebAuthenticationHandler(
+                new Factory() {
+                    @Override
+                    public ChannelHandler createHandler() {
+                        return new JobManagerWebAuthenticationHandler(
                                 authenticator,
                                 signer,
                                 authenticationConfig.getCookiePath(),
                                 authenticationConfig.isSecureCookie(),
-                                responseHeaders));
+                                responseHeaders);
+                    }
+
+                    @Override
+                    public ChannelHandler createPreFileUploadHandler() {
+                        return JobManagerWebAuthenticationHandler.createPreFileUploadHandler(
+                                authenticator,
+                                signer,
+                                authenticationConfig.getCookiePath(),
+                                authenticationConfig.isSecureCookie(),
+                                responseHeaders);
+                    }
+                });
     }
 
     @Override
@@ -123,7 +153,20 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
         }
 
         FullHttpRequest request = (FullHttpRequest) msg;
-        Optional<AuthenticationToken> cookieToken = getAuthenticationTokenFromCookie(request);
+        AuthenticationToken preAuthenticatedToken =
+                ctx.channel().attr(PRE_AUTHENTICATED_TOKEN).getAndSet(null);
+        if (preAuthenticatedToken != null) {
+            setAuthenticatedUser(ctx, preAuthenticatedToken);
+            try {
+                ctx.fireChannelRead(msg);
+            } finally {
+                clearAuthenticatedUser(ctx);
+            }
+            return;
+        }
+
+        Optional<AuthenticationToken> cookieToken =
+                getAuthenticationTokenFromCookie(request, tokenSigner);
         if (cookieToken.isPresent()) {
             setAuthenticatedUser(ctx, cookieToken.get());
             try {
@@ -172,23 +215,14 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
             throws Exception {
         if (msg instanceof HttpResponse) {
-            ResponseAuthentication responseAuthentication =
-                    ctx.channel().attr(RESPONSE_AUTHENTICATION_ATTRIBUTE).getAndSet(null);
-            if (responseAuthentication != null) {
-                HttpHeaders headers = ((HttpResponse) msg).headers();
-                headers.add(HttpHeaderNames.SET_COOKIE, createAuthCookie(responseAuthentication));
-                if (responseAuthentication.authenticateHeader() != null) {
-                    headers.set(
-                            HttpHeaderNames.WWW_AUTHENTICATE,
-                            responseAuthentication.authenticateHeader());
-                }
-            }
+            addResponseAuthentication(
+                    ctx, ((HttpResponse) msg).headers(), cookiePath, secureCookie);
         }
         ctx.write(msg, promise);
     }
 
-    private Optional<AuthenticationToken> getAuthenticationTokenFromCookie(
-            FullHttpRequest request) {
+    private static Optional<AuthenticationToken> getAuthenticationTokenFromCookie(
+            HttpRequest request, JobManagerAuthenticationTokenSigner tokenSigner) {
         for (String cookieHeader : request.headers().getAll(HttpHeaderNames.COOKIE)) {
             try {
                 Set<Cookie> cookies = ServerCookieDecoder.STRICT.decode(cookieHeader);
@@ -230,10 +264,30 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
 
     private void sendResponse(
             ChannelHandlerContext ctx,
-            FullHttpRequest request,
+            HttpRequest request,
             HttpResponseStatus status,
             @Nullable String authenticateHeader,
             boolean expireCookie) {
+        sendResponse(
+                ctx,
+                request,
+                status,
+                authenticateHeader,
+                expireCookie,
+                responseHeaders,
+                cookiePath,
+                secureCookie);
+    }
+
+    private static void sendResponse(
+            ChannelHandlerContext ctx,
+            HttpRequest request,
+            HttpResponseStatus status,
+            @Nullable String authenticateHeader,
+            boolean expireCookie,
+            Map<String, String> responseHeaders,
+            String cookiePath,
+            boolean secureCookie) {
         clearAuthenticatedUser(ctx);
         FullHttpResponse response =
                 new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status, Unpooled.EMPTY_BUFFER);
@@ -243,7 +297,10 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
             response.headers().set(HttpHeaderNames.WWW_AUTHENTICATE, authenticateHeader);
         }
         if (expireCookie) {
-            response.headers().add(HttpHeaderNames.SET_COOKIE, createExpiredAuthCookie());
+            response.headers()
+                    .add(
+                            HttpHeaderNames.SET_COOKIE,
+                            createExpiredAuthCookie(cookiePath, secureCookie));
         }
 
         boolean keepAlive = HttpUtil.isKeepAlive(request);
@@ -256,7 +313,29 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
         }
     }
 
-    private String createAuthCookie(ResponseAuthentication responseAuthentication) {
+    private static void addResponseAuthentication(
+            ChannelHandlerContext ctx,
+            HttpHeaders headers,
+            String cookiePath,
+            boolean secureCookie) {
+        ResponseAuthentication responseAuthentication =
+                ctx.channel().attr(RESPONSE_AUTHENTICATION_ATTRIBUTE).getAndSet(null);
+        if (responseAuthentication != null) {
+            headers.add(
+                    HttpHeaderNames.SET_COOKIE,
+                    createAuthCookie(responseAuthentication, cookiePath, secureCookie));
+            if (responseAuthentication.authenticateHeader() != null) {
+                headers.set(
+                        HttpHeaderNames.WWW_AUTHENTICATE,
+                        responseAuthentication.authenticateHeader());
+            }
+        }
+    }
+
+    private static String createAuthCookie(
+            ResponseAuthentication responseAuthentication,
+            String cookiePath,
+            boolean secureCookie) {
         StringBuilder cookie =
                 new StringBuilder(AuthenticatedURL.AUTH_COOKIE)
                         .append("=\"")
@@ -270,7 +349,7 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
         return cookie.toString();
     }
 
-    private String createExpiredAuthCookie() {
+    private static String createExpiredAuthCookie(String cookiePath, boolean secureCookie) {
         StringBuilder cookie =
                 new StringBuilder(AuthenticatedURL.AUTH_COOKIE)
                         .append("=; Path=")
@@ -283,9 +362,123 @@ public final class JobManagerWebAuthenticationHandler extends ChannelDuplexHandl
         return cookie.toString();
     }
 
+    private static final class PreFileUploadAuthenticationHandler extends ChannelDuplexHandler {
+
+        private final SpnegoAuthenticator authenticator;
+        private final JobManagerAuthenticationTokenSigner tokenSigner;
+        private final String cookiePath;
+        private final boolean secureCookie;
+        private final Map<String, String> responseHeaders;
+
+        private boolean discardingRejectedRequest;
+
+        private PreFileUploadAuthenticationHandler(
+                SpnegoAuthenticator authenticator,
+                JobManagerAuthenticationTokenSigner tokenSigner,
+                String cookiePath,
+                boolean secureCookie,
+                Map<String, String> responseHeaders) {
+            this.authenticator = checkNotNull(authenticator);
+            this.tokenSigner = checkNotNull(tokenSigner);
+            this.cookiePath = checkNotNull(cookiePath);
+            this.secureCookie = secureCookie;
+            this.responseHeaders = checkNotNull(responseHeaders);
+        }
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (discardingRejectedRequest) {
+                if (msg instanceof LastHttpContent) {
+                    discardingRejectedRequest = false;
+                }
+                ReferenceCountUtil.release(msg);
+                return;
+            }
+
+            if (!(msg instanceof HttpRequest) || !requiresEarlyAuthentication((HttpRequest) msg)) {
+                ctx.fireChannelRead(msg);
+                return;
+            }
+
+            HttpRequest request = (HttpRequest) msg;
+            Optional<AuthenticationToken> cookieToken =
+                    getAuthenticationTokenFromCookie(request, tokenSigner);
+            if (cookieToken.isPresent()) {
+                ctx.channel().attr(PRE_AUTHENTICATED_TOKEN).set(cookieToken.get());
+                ctx.fireChannelRead(msg);
+                return;
+            }
+
+            try {
+                JobManagerSpnegoAuthenticationResult result =
+                        authenticator.authenticate(
+                                request.headers().get(HttpHeaderNames.AUTHORIZATION));
+                if (!result.isAuthenticated()) {
+                    rejectRequest(
+                            ctx,
+                            request,
+                            HttpResponseStatus.UNAUTHORIZED,
+                            result.authenticateHeader());
+                    return;
+                }
+
+                AuthenticationToken authenticationToken = result.authenticationToken();
+                String signedToken =
+                        tokenSigner.signToken(
+                                authenticationToken.getUserName(), authenticationToken.getName());
+                ctx.channel().attr(PRE_AUTHENTICATED_TOKEN).set(authenticationToken);
+                ctx.channel()
+                        .attr(RESPONSE_AUTHENTICATION_ATTRIBUTE)
+                        .set(new ResponseAuthentication(signedToken, result.authenticateHeader()));
+                ctx.fireChannelRead(msg);
+            } catch (AuthenticationException e) {
+                LOG.debug("JobManager web SPNEGO upload authentication failed.", e);
+                rejectRequest(ctx, request, HttpResponseStatus.FORBIDDEN, null);
+            }
+        }
+
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+                throws Exception {
+            if (msg instanceof HttpResponse) {
+                addResponseAuthentication(
+                        ctx, ((HttpResponse) msg).headers(), cookiePath, secureCookie);
+                ctx.channel().attr(PRE_AUTHENTICATED_TOKEN).set(null);
+            }
+            ctx.write(msg, promise);
+        }
+
+        private void rejectRequest(
+                ChannelHandlerContext ctx,
+                HttpRequest request,
+                HttpResponseStatus status,
+                @Nullable String authenticateHeader) {
+            clearAuthenticatedUser(ctx);
+            ctx.channel().attr(PRE_AUTHENTICATED_TOKEN).set(null);
+            ctx.channel().attr(RESPONSE_AUTHENTICATION_ATTRIBUTE).set(null);
+            discardingRejectedRequest = !(request instanceof LastHttpContent);
+            sendResponse(
+                    ctx,
+                    request,
+                    status,
+                    authenticateHeader,
+                    true,
+                    responseHeaders,
+                    cookiePath,
+                    secureCookie);
+        }
+
+        private static boolean requiresEarlyAuthentication(HttpRequest request) {
+            return HttpMethod.POST.equals(request.method())
+                    && HttpPostRequestDecoder.isMultipart(request);
+        }
+    }
+
     /** Factory for per-channel JobManager web authentication handlers. */
     public interface Factory {
         ChannelHandler createHandler();
+
+        ChannelHandler createPreFileUploadHandler();
     }
 
     private static final class ResponseAuthentication {

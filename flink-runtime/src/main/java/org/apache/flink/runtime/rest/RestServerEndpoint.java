@@ -179,6 +179,17 @@ public abstract class RestServerEndpoint implements RestService {
     }
 
     /**
+     * Creates endpoint-specific Netty handlers that run before multipart upload handling.
+     *
+     * <p>These handlers see raw HTTP messages and are intended for endpoint-local guards that must
+     * run before request bodies can be written to the upload directory.
+     */
+    protected Collection<ChannelHandler> createEndpointSpecificPreFileUploadChannelHandlers()
+            throws ConfigurationException {
+        return Collections.emptyList();
+    }
+
+    /**
      * Starts this REST server endpoint.
      *
      * @throws Exception if we cannot start the RestServerEndpoint
@@ -228,8 +239,14 @@ public abstract class RestServerEndpoint implements RestService {
                                                         sslHandlerFactory));
                             }
 
+                            ch.pipeline().addLast(new HttpServerCodec());
+
+                            for (ChannelHandler channelHandler :
+                                    createEndpointSpecificPreFileUploadChannelHandlers()) {
+                                ch.pipeline().addLast(channelHandler);
+                            }
+
                             ch.pipeline()
-                                    .addLast(new HttpServerCodec())
                                     .addLast(new FileUploadHandler(uploadDir, multipartRoutes))
                                     .addLast(
                                             new FlinkHttpObjectAggregator(

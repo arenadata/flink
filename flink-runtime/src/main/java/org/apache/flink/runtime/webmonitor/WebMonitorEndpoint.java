@@ -284,6 +284,14 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
                 .orElseGet(Collections::emptyList);
     }
 
+    @Override
+    protected Collection<ChannelHandler> createEndpointSpecificPreFileUploadChannelHandlers() {
+        return webAuthenticationHandlerFactory
+                .<Collection<ChannelHandler>>map(
+                        factory -> Collections.singletonList(factory.createPreFileUploadHandler()))
+                .orElseGet(Collections::emptyList);
+    }
+
     private VertexThreadInfoTracker initializeThreadInfoTracker(ScheduledExecutorService executor) {
         final Duration askTimeout = clusterConfiguration.get(RpcOptions.ASK_TIMEOUT_DURATION);
 

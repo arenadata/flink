@@ -530,6 +530,12 @@ under the License.
 									</shadedPattern>
 								</relocation>
 								<relocation>
+									<pattern>org.apache.hadoop.util.PlatformName</pattern>
+									<shadedPattern>
+										org.apache.flink.runtime.shaded.org.apache.hadoop.util.PlatformName
+									</shadedPattern>
+								</relocation>
+								<relocation>
 									<pattern>org.apache.hadoop.thirdparty</pattern>
 									<shadedPattern>
 										org.apache.flink.runtime.shaded.org.apache.hadoop.thirdparty

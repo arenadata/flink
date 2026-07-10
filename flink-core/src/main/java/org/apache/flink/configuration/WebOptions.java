@@ -151,6 +151,85 @@ public class WebOptions {
                     .withDescription(
                             "Flag indicating whether jobs can be rescaled from the web-frontend.");
 
+    /** Authentication type for the JobManager web-frontend. */
+    public static final ConfigOption<WebAuthenticationType> AUTHENTICATION_TYPE =
+            key("web.authentication.type")
+                    .enumType(WebAuthenticationType.class)
+                    .defaultValue(WebAuthenticationType.NONE)
+                    .withDescription(
+                            "Authentication type for the JobManager web frontend and REST "
+                                    + "endpoints.");
+
+    /** Kerberos principal for JobManager web SPNEGO authentication. */
+    public static final ConfigOption<String> AUTHENTICATION_KERBEROS_PRINCIPAL =
+            key("web.authentication.kerberos.principal")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Kerberos principal for JobManager web SPNEGO authentication. "
+                                    + "Required when JobManager web authentication type is "
+                                    + "KERBEROS. The principal must start with HTTP/. The _HOST "
+                                    + "placeholder is replaced with the configured REST address. "
+                                    + "Use * to accept all HTTP principals in the keytab.");
+
+    /** Kerberos keytab for JobManager web SPNEGO authentication. */
+    public static final ConfigOption<String> AUTHENTICATION_KERBEROS_KEYTAB =
+            key("web.authentication.kerberos.keytab")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Absolute path to the keytab file for the JobManager web SPNEGO "
+                                    + "principal. Required when JobManager web authentication "
+                                    + "type is KERBEROS.");
+
+    /** Kerberos auth-to-local rules for JobManager web SPNEGO authentication. */
+    public static final ConfigOption<String> AUTHENTICATION_KERBEROS_NAME_RULES =
+            key("web.authentication.kerberos.name-rules")
+                    .stringType()
+                    .defaultValue("DEFAULT")
+                    .withDescription(
+                            "Kerberos auth-to-local rules used to map authenticated principals to "
+                                    + "local user names.");
+
+    /** Validity of JobManager web authentication tokens. */
+    public static final ConfigOption<Duration> AUTHENTICATION_TOKEN_VALIDITY =
+            key("web.authentication.token.validity")
+                    .durationType()
+                    .defaultValue(Duration.ofHours(10))
+                    .withDescription(
+                            "Validity period for JobManager web SPNEGO authentication cookies.");
+
+    /** Cookie path for JobManager web authentication tokens. */
+    public static final ConfigOption<String> AUTHENTICATION_COOKIE_PATH =
+            key("web.authentication.cookie.path")
+                    .stringType()
+                    .defaultValue("/")
+                    .withDescription(
+                            "Cookie path for JobManager web SPNEGO authentication cookies.");
+
+    /** Shared signing secret for JobManager web authentication tokens. */
+    public static final ConfigOption<String> AUTHENTICATION_SIGNATURE_SECRET =
+            key("web.authentication.signature.secret")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Shared secret for signing JobManager web SPNEGO authentication "
+                                    + "cookies. If neither this option nor the secret-file option "
+                                    + "is set, a random process-local secret is generated. "
+                                    + "Configure the same secret for all JobManager instances "
+                                    + "that should accept each other's authentication cookies.");
+
+    /** File containing the shared signing secret for JobManager web authentication tokens. */
+    public static final ConfigOption<String> AUTHENTICATION_SIGNATURE_SECRET_FILE =
+            key("web.authentication.signature.secret-file")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "File containing the shared secret for signing JobManager web SPNEGO "
+                                    + "authentication cookies. Configure the same secret file for "
+                                    + "all JobManager instances that should accept each other's "
+                                    + "authentication cookies.");
+
     /** Config parameter defining the number of checkpoints to remember for recent history. */
     public static final ConfigOption<Integer> CHECKPOINTS_HISTORY_SIZE =
             key("web.checkpoints.history")
@@ -216,4 +295,13 @@ public class WebOptions {
 
     /** Not meant to be instantiated. */
     private WebOptions() {}
+
+    /** Authentication types supported by the JobManager web-frontend. */
+    public enum WebAuthenticationType {
+        /** Authentication is disabled. */
+        NONE,
+
+        /** Kerberos/SPNEGO authentication. */
+        KERBEROS
+    }
 }

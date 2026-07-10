@@ -56,7 +56,7 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-sql-gateway-api</artifactId>
             <version>${project.version}</version>
-			<optional>${flink.markBundledAsOptional}</optional>
+            <optional>${flink.markBundledAsOptional}</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -69,6 +69,47 @@
             <artifactId>quartz</artifactId>
             <version>${quartz.version}</version>
             <optional>${flink.markBundledAsOptional}</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-auth</artifactId>
+            <version>${flink.hadoop.version}</version>
+            <optional>${flink.markBundledAsOptional}</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.reload4j</groupId>
+                    <artifactId>reload4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.dropwizard.metrics</groupId>
+                    <artifactId>metrics-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-framework</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-handler</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Test dependencies -->
@@ -114,6 +155,26 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minikdc</artifactId>
+            <version>${minikdc.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
@@ -161,6 +222,18 @@
                             <includes combine.children="append">
                                 <include>org.apache.flink:flink-sql-gateway-api</include>
                                 <include>org.quartz-scheduler:quartz</include>
+                                <include>org.apache.hadoop:hadoop-auth</include>
+                                <include>commons-codec:commons-codec</include>
+                                <include>org.apache.httpcomponents:httpclient</include>
+                                <include>org.apache.httpcomponents:httpcore</include>
+                                <include>org.apache.hadoop.thirdparty:hadoop-shaded-guava</include>
+                                <include>org.apache.kerby:kerb-core</include>
+                                <include>org.apache.kerby:kerby-pkix</include>
+                                <include>org.apache.kerby:kerby-asn1</include>
+                                <include>org.apache.kerby:kerby-util</include>
+                                <include>org.apache.kerby:kerb-util</include>
+                                <include>org.apache.kerby:kerby-config</include>
+                                <include>org.apache.kerby:kerb-crypto</include>
                             </includes>
                         </artifactSet>
                         <filters>
@@ -179,6 +252,10 @@
                             <relocation>
                                 <pattern>org.terracotta.quartz</pattern>
                                 <shadedPattern>org.apache.flink.table.shaded.org.terracotta.quartz</shadedPattern>
+                            </relocation>
+                            <relocation>
+                                <pattern>org.apache.hadoop</pattern>
+                                <shadedPattern>org.apache.flink.table.shaded.org.apache.hadoop</shadedPattern>
                             </relocation>
                         </relocations>
                     </configuration>

@@ -60,6 +60,7 @@ The following services and connectors are supported for Kerberos authentication:
 - HDFS
 - HBase
 - ZooKeeper
+- JobManager Web UI / REST endpoint (SPNEGO)
 
 Note that it is possible to enable the use of Kerberos independently for each service or connector.
 For example, the user may enable Hadoop security without necessitating the use of Kerberos for ZooKeeper,
@@ -91,6 +92,34 @@ dynamic entries provided by this module.
 ### ZooKeeper Security Module
 This module configures certain process-wide ZooKeeper security-related settings, namely the ZooKeeper service name (default: `zookeeper`)
 and the JAAS login context name (default: `Client`).
+
+### JobManager Web UI SPNEGO Authentication
+
+The JobManager Web UI and REST endpoint are unauthenticated by default. If port `8081` is reachable from an untrusted network, unauthenticated users can submit jobs and perform control operations. To require Kerberos/SPNEGO authentication on all JobManager WebMonitor paths, enable:
+
+```yaml
+web.authentication.type: KERBEROS
+web.authentication.kerberos.principal: HTTP/_HOST@EXAMPLE.COM
+web.authentication.kerberos.keytab: /etc/security/keytabs/flink-jobmanager-http.keytab
+web.authentication.kerberos.name-rules: DEFAULT
+web.authentication.token.validity: 10 h
+web.authentication.cookie.path: /
+web.authentication.signature.secret-file: /etc/flink/jobmanager-web-auth-secret
+```
+
+The principal must start with `HTTP/`. The `_HOST` placeholder is replaced from `rest.address`, then `rest.bind-address`, then the local canonical hostname. Use `*` to accept all `HTTP/` principals present in the configured keytab.
+
+When enabled, requests without a valid authentication cookie or `Authorization: Negotiate` header receive `401` with `WWW-Authenticate: Negotiate`; malformed or invalid SPNEGO tokens receive `403`. A successful SPNEGO exchange issues a signed `hadoop.auth` cookie, so subsequent requests do not need to negotiate Kerberos again until the cookie expires.
+
+Clients with Kerberos credentials can access the endpoint with:
+
+```bash
+curl --negotiate -u : http://jobmanager.example.com:8081/jobs
+```
+
+For multiple JobManager instances behind the same address, configure a shared `web.authentication.signature.secret` or `web.authentication.signature.secret-file`; otherwise each process uses a random local signing secret and cannot verify cookies issued by another process.
+
+SPNEGO authenticates the caller only. It does not add per-user authorization, user or group allowlists, Ranger policy enforcement, Knox integration, session ownership enforcement, or built-in Flink CLI / REST client SPNEGO support.
 
 ## Deployment Modes
 Here is some information specific to each deployment mode.  

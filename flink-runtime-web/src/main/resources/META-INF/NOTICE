@@ -4,6 +4,21 @@ Copyright 2014-2024 The Apache Software Foundation
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
+This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+- commons-codec:commons-codec:1.15
+- org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.6.0.1-4.3.0-0
+- org.apache.hadoop:hadoop-auth:3.4.3.1-4.3.0-1
+- org.apache.httpcomponents:httpclient:4.5.13
+- org.apache.httpcomponents:httpcore:4.4.14
+- org.apache.kerby:kerb-core:2.0.3
+- org.apache.kerby:kerb-crypto:2.0.3
+- org.apache.kerby:kerb-util:2.0.3
+- org.apache.kerby:kerby-asn1:2.0.3
+- org.apache.kerby:kerby-config:2.0.3
+- org.apache.kerby:kerby-pkix:2.0.3
+- org.apache.kerby:kerby-util:2.0.3
+
 # Dependency Licenses
 ## flink-dashboard (2.0.0)
 -------------------
@@ -3013,5 +3028,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ---
-
 

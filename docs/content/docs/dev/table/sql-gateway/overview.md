@@ -57,6 +57,10 @@ $ ./bin/sql-gateway.sh start -Dsql-gateway.endpoint.rest.address=localhost
 The command starts the SQL Gateway with REST Endpoint that listens on the address localhost:8083. You can use the curl command to check
 whether the REST Endpoint is available.
 
+{{< hint warning >}}
+The SQL Gateway REST endpoint does not authenticate requests by default. If it is bound to a network-facing address, any client with network access can create sessions and execute SQL unless you enable REST SPNEGO authentication or protect the endpoint with external access controls.
+{{< /hint >}}
+
 ```bash
 $ curl http://localhost:8083/v1/info
 {"productName":"Apache Flink","version":"{{< version >}}"}

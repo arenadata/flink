@@ -36,7 +36,6 @@ import org.apache.flink.runtime.webmonitor.testutils.HttpUtils;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.v2.DiscardingSink;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
-import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.jackson.JacksonMapperFactory;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonFactory;
@@ -251,8 +250,7 @@ class HistoryServerTest {
                 .isInstanceOf(IllegalConfigurationException.class);
     }
 
-    private void startHistoryServerWithSizeLimit(int maxHistorySize)
-            throws IOException, FlinkException, InterruptedException {
+    private void startHistoryServerWithSizeLimit(int maxHistorySize) throws Exception {
         Configuration historyServerConfig =
                 createTestConfiguration(
                         HistoryServerOptions.HISTORY_SERVER_CLEANUP_EXPIRED_JOBS.defaultValue());

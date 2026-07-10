@@ -28,6 +28,7 @@ import org.apache.flink.runtime.rest.handler.router.Router;
 import org.apache.flink.runtime.rest.handler.router.RouterHandler;
 import org.apache.flink.runtime.webmonitor.HttpRequestHandler;
 import org.apache.flink.runtime.webmonitor.PipelineErrorHandler;
+import org.apache.flink.runtime.webmonitor.history.security.HistoryServerWebAuthenticationHandler;
 import org.apache.flink.util.ConfigurationException;
 import org.apache.flink.util.Preconditions;
 
@@ -71,6 +72,8 @@ public class WebFrontendBootstrap {
     private final String restAddress;
     private final int maxContentLength;
     private final Map<String, String> responseHeaders;
+    private final Optional<HistoryServerWebAuthenticationHandler.Factory>
+            historyServerWebAuthenticationHandlerFactory;
     @VisibleForTesting List<InboundChannelHandlerFactory> inboundChannelHandlerFactories;
 
     public WebFrontendBootstrap(
@@ -81,13 +84,16 @@ public class WebFrontendBootstrap {
             String configuredAddress,
             int configuredPort,
             final Configuration config)
-            throws InterruptedException, UnknownHostException {
+            throws InterruptedException, UnknownHostException, ConfigurationException {
 
         this.router = Preconditions.checkNotNull(router);
         this.log = Preconditions.checkNotNull(log);
         this.uploadDir = directory;
         this.maxContentLength = config.get(SERVER_MAX_CONTENT_LENGTH);
         this.responseHeaders = new HashMap<>();
+        this.historyServerWebAuthenticationHandlerFactory =
+                HistoryServerWebAuthenticationHandler.createFactory(
+                        config, serverSSLFactory != null);
         inboundChannelHandlerFactories = new ArrayList<>();
         ServiceLoader<InboundChannelHandlerFactory> loader =
                 ServiceLoader.load(InboundChannelHandlerFactory.class);
@@ -124,12 +130,16 @@ public class WebFrontendBootstrap {
                                             serverSSLFactory.createNettySSLHandler(ch.alloc()));
                         }
 
+                        ch.pipeline().addLast(new HttpServerCodec());
+
                         ch.pipeline()
-                                .addLast(new HttpServerCodec())
                                 .addLast(new HttpRequestHandler(uploadDir))
                                 .addLast(
                                         new FlinkHttpObjectAggregator(
                                                 maxContentLength, responseHeaders));
+
+                        historyServerWebAuthenticationHandlerFactory.ifPresent(
+                                factory -> ch.pipeline().addLast(factory.createHandler()));
 
                         for (InboundChannelHandlerFactory factory :
                                 inboundChannelHandlerFactories) {

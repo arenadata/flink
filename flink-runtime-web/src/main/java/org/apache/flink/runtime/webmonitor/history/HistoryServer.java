@@ -40,6 +40,7 @@ import org.apache.flink.runtime.util.Runnables;
 import org.apache.flink.runtime.webmonitor.history.retaining.CompositeJobRetainedStrategy;
 import org.apache.flink.runtime.webmonitor.utils.LogUrlUtil;
 import org.apache.flink.runtime.webmonitor.utils.WebFrontendBootstrap;
+import org.apache.flink.util.ConfigurationException;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.ExecutorUtils;
 import org.apache.flink.util.FatalExitExceptionHandler;
@@ -296,7 +297,7 @@ public class HistoryServer {
     // Life-cycle
     // ------------------------------------------------------------------------
 
-    void start() throws IOException, InterruptedException {
+    void start() throws IOException, InterruptedException, ConfigurationException {
         synchronized (startupShutdownLock) {
             LOG.info("Starting history server.");
 
@@ -324,6 +325,9 @@ public class HistoryServer {
                                             new GeneratedLogUrlHandler(
                                                     CompletableFuture.completedFuture(pattern))));
 
+            router.addGet(
+                    HistoryServerAuthenticatedUserHandler.URL,
+                    new HistoryServerAuthenticatedUserHandler());
             router.addGet("/:*", new HistoryServerStaticFileServerHandler(webDir));
 
             createDashboardConfigFile();

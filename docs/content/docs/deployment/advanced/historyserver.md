@@ -43,6 +43,7 @@ bin/historyserver.sh (start|start-foreground|stop)
 ```
 
 By default, this server binds to `localhost` and listens at port `8082`.
+If you bind the HistoryServer to a network-facing address such as `0.0.0.0`, enable authentication or place it behind an authenticated gateway. Without authentication, any user with network access can inspect archived job metadata, execution plans, configuration values, timestamps, and configured log links.
 
 Currently, you can only run it as a standalone process.
 
@@ -74,6 +75,33 @@ historyserver.archive.fs.refresh-interval: 10000
 The contained archives are downloaded and cached in the local filesystem. The local directory for this is configured via `historyserver.web.tmpdir`.
 
 Check out the configuration page for a [complete list of configuration options]({{< ref "docs/deployment/config" >}}#history-server).
+
+## SPNEGO Authentication
+
+The HistoryServer web UI and REST endpoints can require Kerberos/SPNEGO authentication. This is opt-in; the default `historyserver.web.authentication.type` is `NONE`.
+
+To enable SPNEGO, configure an HTTP service principal and keytab for the HistoryServer process:
+
+```yaml
+historyserver.web.authentication.type: KERBEROS
+historyserver.web.authentication.kerberos.principal: HTTP/_HOST@EXAMPLE.COM
+historyserver.web.authentication.kerberos.keytab: /etc/security/keytabs/flink-historyserver.keytab
+historyserver.web.authentication.signature.secret-file: /etc/flink/historyserver-auth-secret
+```
+
+The principal must start with `HTTP/`. The `_HOST` placeholder is replaced with the local hostname, and `*` can be used to accept all `HTTP/` principals present in the configured keytab. If `historyserver.web.authentication.kerberos.name-rules` is not configured, the default Hadoop auth-to-local rule is used.
+
+When authentication is enabled, requests without a valid cookie or `Authorization: Negotiate` header return `401` with `WWW-Authenticate: Negotiate`. A valid SPNEGO exchange issues a signed `hadoop.auth` cookie and then proceeds to the existing HistoryServer handlers. Invalid SPNEGO tokens return `403`.
+
+Clients with Kerberos credentials can access the HistoryServer with:
+
+```shell
+curl --negotiate -u : http://historyserver.example.com:8082/jobs/overview
+```
+
+If multiple HistoryServer instances serve the same endpoint, configure the same `historyserver.web.authentication.signature.secret` or `historyserver.web.authentication.signature.secret-file` on all instances so that authentication cookies are accepted consistently. If neither option is configured, a random process-local signing secret is generated at startup.
+
+SPNEGO authenticates the caller only. It does not add per-user or per-group authorization, and it does not change JobManager or TaskManager REST authentication.
 
 ## Log Integration
 

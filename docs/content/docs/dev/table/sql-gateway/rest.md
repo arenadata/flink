@@ -88,8 +88,84 @@ Endpoint Options
             <td>Integer</td>
             <td>The port that the client connects to. If bind-port has not been specified, then the sql gateway server will bind to this port.</td>
         </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.type</h5></td>
+            <td style="word-wrap: break-word;">NONE</td>
+            <td>Enum</td>
+            <td>Authentication type for the SQL Gateway REST endpoint. Supported values are NONE and KERBEROS.</td>
+        </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.kerberos.principal</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Kerberos principal for accepting SPNEGO requests when REST authentication type is KERBEROS. The value supports HTTP/_HOST@REALM host replacement and * to load all HTTP principals from the keytab.</td>
+        </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.kerberos.keytab</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Path to the keytab containing the REST SPNEGO service principal. This option is required when REST authentication type is KERBEROS.</td>
+        </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.kerberos.name-rules</h5></td>
+            <td style="word-wrap: break-word;">DEFAULT</td>
+            <td>String</td>
+            <td>Kerberos auth-to-local rules used to map the authenticated Kerberos principal to a local user name.</td>
+        </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.token.validity</h5></td>
+            <td style="word-wrap: break-word;">10 h</td>
+            <td>Duration</td>
+            <td>Validity of the signed REST authentication cookie issued after a successful SPNEGO exchange.</td>
+        </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.cookie.path</h5></td>
+            <td style="word-wrap: break-word;">/</td>
+            <td>String</td>
+            <td>Path attribute for the REST authentication cookie.</td>
+        </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.signature.secret</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Shared secret used to sign REST authentication cookies. If neither this option nor signature.secret-file is configured, a random process-local secret is generated.</td>
+        </tr>
+        <tr>
+            <td><h5>sql-gateway.endpoint.rest.authentication.signature.secret-file</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Path to a file containing the shared secret used to sign REST authentication cookies. Configure either signature.secret or signature.secret-file, but not both.</td>
+        </tr>
     </tbody>
 </table>
+
+REST SPNEGO Authentication
+----------------
+
+By default, the REST endpoint does not authenticate requests. If the endpoint is reachable from an untrusted network, any client that can connect to it can create sessions, execute SQL, submit jobs, and access configured data sources. Bind the endpoint to a trusted interface, place it behind an authenticated gateway, or enable SPNEGO authentication before exposing it beyond a trusted boundary.
+
+SPNEGO authentication is opt-in and applies to every SQL Gateway REST path, including `/v*/info`.
+
+```yaml
+sql-gateway.endpoint.rest.authentication.type: KERBEROS
+sql-gateway.endpoint.rest.authentication.kerberos.principal: HTTP/_HOST@EXAMPLE.COM
+sql-gateway.endpoint.rest.authentication.kerberos.keytab: /etc/security/keytabs/flink-sql-gateway.keytab
+sql-gateway.endpoint.rest.authentication.kerberos.name-rules: DEFAULT
+sql-gateway.endpoint.rest.authentication.signature.secret-file: /etc/flink/sql-gateway-cookie-secret
+```
+
+Clients must use an HTTP client that can negotiate SPNEGO, for example:
+
+```bash
+$ kinit user@EXAMPLE.COM
+$ curl --negotiate -u : http://sql-gateway-host:8083/v1/info
+$ curl --negotiate -u : --request POST http://sql-gateway-host:8083/v1/sessions
+```
+
+Unauthenticated requests receive `401` with `WWW-Authenticate: Negotiate`. Malformed or invalid SPNEGO tokens receive `403`.
+After a successful SPNEGO exchange, the REST endpoint issues a signed `hadoop.auth` cookie. Multi-instance or load-balanced SQL Gateway deployments must configure the same `sql-gateway.endpoint.rest.authentication.signature.secret` or `sql-gateway.endpoint.rest.authentication.signature.secret-file` on every instance; otherwise cookies issued by one instance will not be accepted by another.
+
+The built-in Flink SQL Client and Flink JDBC Driver do not negotiate SPNEGO with the SQL Gateway REST endpoint in this change. Use an HTTP SPNEGO-capable client or put the SQL Gateway behind a separate authenticated gateway or proxy when those clients are required.
 
 REST API
 ----------------

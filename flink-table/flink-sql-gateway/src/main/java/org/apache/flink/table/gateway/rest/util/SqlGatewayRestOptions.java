@@ -22,6 +22,8 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.gateway.rest.SqlGatewayRestEndpoint;
 
+import java.time.Duration;
+
 import static org.apache.flink.configuration.ConfigOptions.key;
 
 /**
@@ -42,6 +44,12 @@ import static org.apache.flink.configuration.ConfigOptions.key;
  */
 @PublicEvolving
 public class SqlGatewayRestOptions {
+
+    /** Authentication mechanism for the SQL Gateway REST endpoint. */
+    public enum SqlGatewayRestAuthenticationType {
+        NONE,
+        KERBEROS
+    }
 
     /** The address that should be used by clients to connect to the sql gateway server. */
     public static final ConfigOption<String> ADDRESS =
@@ -77,4 +85,72 @@ public class SqlGatewayRestOptions {
                             String.format(
                                     "The port that the client connects to. If %s has not been specified, then the sql gateway server will bind to this port.",
                                     BIND_PORT.key()));
+
+    /** Authentication type used by the SQL Gateway REST endpoint. */
+    public static final ConfigOption<SqlGatewayRestAuthenticationType> AUTHENTICATION_TYPE =
+            key("authentication.type")
+                    .enumType(SqlGatewayRestAuthenticationType.class)
+                    .defaultValue(SqlGatewayRestAuthenticationType.NONE)
+                    .withDescription(
+                            "The authentication type for the SQL Gateway REST endpoint. "
+                                    + "Supported values are NONE and KERBEROS.");
+
+    /** Kerberos principal used by the SQL Gateway REST endpoint SPNEGO acceptor. */
+    public static final ConfigOption<String> AUTHENTICATION_KERBEROS_PRINCIPAL =
+            key("authentication.kerberos.principal")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Kerberos principal used by the SQL Gateway REST endpoint SPNEGO acceptor. "
+                                    + "The HTTP/_HOST@REALM pattern is supported, and '*' uses all HTTP principals from the keytab.");
+
+    /** Kerberos keytab used by the SQL Gateway REST endpoint SPNEGO acceptor. */
+    public static final ConfigOption<String> AUTHENTICATION_KERBEROS_KEYTAB =
+            key("authentication.kerberos.keytab")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Kerberos keytab used by the SQL Gateway REST endpoint SPNEGO acceptor.");
+
+    /** Kerberos auth-to-local rules used by the SQL Gateway REST endpoint. */
+    public static final ConfigOption<String> AUTHENTICATION_KERBEROS_NAME_RULES =
+            key("authentication.kerberos.name-rules")
+                    .stringType()
+                    .defaultValue("DEFAULT")
+                    .withDescription(
+                            "Kerberos auth-to-local rules used to derive the local user name from the authenticated Kerberos principal.");
+
+    /** Validity period of the SQL Gateway REST authentication cookie. */
+    public static final ConfigOption<Duration> AUTHENTICATION_TOKEN_VALIDITY =
+            key("authentication.token.validity")
+                    .durationType()
+                    .defaultValue(Duration.ofHours(10))
+                    .withDescription(
+                            "Validity period of the SQL Gateway REST authentication cookie.");
+
+    /** Cookie path used for SQL Gateway REST authentication cookies. */
+    public static final ConfigOption<String> AUTHENTICATION_COOKIE_PATH =
+            key("authentication.cookie.path")
+                    .stringType()
+                    .defaultValue("/")
+                    .withDescription(
+                            "Cookie path used for SQL Gateway REST authentication cookies.");
+
+    /** Shared secret used to sign SQL Gateway REST authentication cookies. */
+    public static final ConfigOption<String> AUTHENTICATION_SIGNATURE_SECRET =
+            key("authentication.signature.secret")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Shared secret used to sign SQL Gateway REST authentication cookies. "
+                                    + "If neither this option nor authentication.signature.secret-file is configured, a random per-process secret is used.");
+
+    /** File containing the shared secret used to sign SQL Gateway REST authentication cookies. */
+    public static final ConfigOption<String> AUTHENTICATION_SIGNATURE_SECRET_FILE =
+            key("authentication.signature.secret-file")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "File containing the shared secret used to sign SQL Gateway REST authentication cookies. "
+                                    + "If neither this option nor authentication.signature.secret is configured, a random per-process secret is used.");
 }

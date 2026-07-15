@@ -167,6 +167,9 @@ import org.apache.flink.runtime.scheduler.ExecutionGraphInfo;
 import org.apache.flink.runtime.webmonitor.history.ArchivedJson;
 import org.apache.flink.runtime.webmonitor.history.JsonArchivist;
 import org.apache.flink.runtime.webmonitor.retriever.GatewayRetriever;
+import org.apache.flink.runtime.webmonitor.security.JobManagerAuthenticatedUserHandler;
+import org.apache.flink.runtime.webmonitor.security.JobManagerAuthenticatedUserHeaders;
+import org.apache.flink.runtime.webmonitor.security.JobManagerWebAuthenticationHandler;
 import org.apache.flink.runtime.webmonitor.threadinfo.ThreadInfoRequestCoordinator;
 import org.apache.flink.runtime.webmonitor.threadinfo.VertexThreadInfoTracker;
 import org.apache.flink.runtime.webmonitor.threadinfo.VertexThreadInfoTrackerBuilder;
@@ -180,6 +183,7 @@ import org.apache.flink.util.concurrent.FutureUtils;
 
 import org.apache.flink.shaded.guava31.com.google.common.cache.Cache;
 import org.apache.flink.shaded.guava31.com.google.common.cache.CacheBuilder;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandler;
 import org.apache.flink.shaded.netty4.io.netty.channel.ChannelInboundHandler;
 
 import javax.annotation.Nullable;
@@ -229,6 +233,9 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
 
     private final Collection<JsonArchivist> archivingHandlers = new ArrayList<>(16);
 
+    private final Optional<JobManagerWebAuthenticationHandler.Factory>
+            webAuthenticationHandlerFactory;
+
     @Nullable private ScheduledFuture<?> executionGraphCleanupTask;
 
     public WebMonitorEndpoint(
@@ -265,6 +272,25 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
 
         this.leaderElection = Preconditions.checkNotNull(leaderElection);
         this.fatalErrorHandler = Preconditions.checkNotNull(fatalErrorHandler);
+        this.webAuthenticationHandlerFactory =
+                JobManagerWebAuthenticationHandler.createFactory(
+                        this.clusterConfiguration, responseHeaders);
+    }
+
+    @Override
+    protected Collection<ChannelHandler> createEndpointSpecificChannelHandlers() {
+        return webAuthenticationHandlerFactory
+                .<Collection<ChannelHandler>>map(
+                        factory -> Collections.singletonList(factory.createHandler()))
+                .orElseGet(Collections::emptyList);
+    }
+
+    @Override
+    protected Collection<ChannelHandler> createEndpointSpecificPreFileUploadChannelHandlers() {
+        return webAuthenticationHandlerFactory
+                .<Collection<ChannelHandler>>map(
+                        factory -> Collections.singletonList(factory.createPreFileUploadHandler()))
+                .orElseGet(Collections::emptyList);
     }
 
     private VertexThreadInfoTracker initializeThreadInfoTracker(ScheduledExecutorService executor) {
@@ -320,6 +346,9 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
                         hasWebSubmissionHandlers,
                         restConfiguration.isWebCancelEnabled(),
                         restConfiguration.isWebRescaleEnabled());
+
+        JobManagerAuthenticatedUserHandler authenticatedUserHandler =
+                new JobManagerAuthenticatedUserHandler();
 
         JobIdsHandler jobIdsHandler =
                 new JobIdsHandler(
@@ -751,6 +780,10 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
                         jobManagerJobEnvironmentHandler.getMessageHeaders(),
                         jobManagerJobEnvironmentHandler));
         handlers.add(Tuple2.of(dashboardConfigHandler.getMessageHeaders(), dashboardConfigHandler));
+        handlers.add(
+                Tuple2.of(
+                        JobManagerAuthenticatedUserHeaders.getInstance(),
+                        authenticatedUserHandler));
         handlers.add(Tuple2.of(jobIdsHandler.getMessageHeaders(), jobIdsHandler));
         handlers.add(Tuple2.of(jobStatusHandler.getMessageHeaders(), jobStatusHandler));
         handlers.add(Tuple2.of(jobsOverviewHandler.getMessageHeaders(), jobsOverviewHandler));

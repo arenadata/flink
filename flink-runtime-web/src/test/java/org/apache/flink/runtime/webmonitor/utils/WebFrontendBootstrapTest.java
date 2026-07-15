@@ -20,6 +20,8 @@ package org.apache.flink.runtime.webmonitor.utils;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.HistoryServerOptions;
+import org.apache.flink.configuration.HistoryServerOptions.HistoryServerWebAuthenticationType;
 import org.apache.flink.runtime.io.network.netty.InboundChannelHandlerFactory;
 import org.apache.flink.runtime.io.network.netty.Prio0InboundChannelHandlerFactory;
 import org.apache.flink.runtime.io.network.netty.Prio1InboundChannelHandlerFactory;
@@ -34,8 +36,15 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,6 +103,80 @@ class WebFrontendBootstrapTest {
             assertThat(index2).isEqualTo(index);
         } finally {
             webUI.shutdown();
+        }
+    }
+
+    @Test
+    void testHistoryServerAuthenticationHandlesSplitHttpRequestsAfterAggregation()
+            throws Exception {
+        Path webDir = Files.createDirectories(tmp.resolve("webDir"));
+        Configuration configuration = new Configuration();
+        configuration.set(
+                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_TYPE,
+                HistoryServerWebAuthenticationType.KERBEROS);
+        configuration.set(
+                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL,
+                "HTTP/localhost@EXAMPLE.COM");
+        configuration.set(
+                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_KERBEROS_KEYTAB,
+                Files.createTempFile(tmp, "history-server", ".keytab").toString());
+        configuration.set(
+                HistoryServerOptions.HISTORY_SERVER_WEB_AUTHENTICATION_SIGNATURE_SECRET,
+                "test-secret");
+
+        Router<?> router =
+                new Router<>()
+                        .addGet("/:*", new HistoryServerStaticFileServerHandler(webDir.toFile()));
+        WebFrontendBootstrap webUI =
+                new WebFrontendBootstrap(
+                        router,
+                        LoggerFactory.getLogger(WebFrontendBootstrapTest.class),
+                        Files.createDirectories(webDir.resolve("uploadDir")).toFile(),
+                        null,
+                        "localhost",
+                        0,
+                        configuration);
+
+        try (Socket socket = new Socket("localhost", webUI.getServerPort())) {
+            socket.setSoTimeout(1_000);
+            socket.getOutputStream()
+                    .write(
+                            ("GET /jobs/overview HTTP/1.1\r\n"
+                                            + "Host: localhost\r\n"
+                                            + "Connection: keep-alive\r\n"
+                                            + "\r\n")
+                                    .getBytes(StandardCharsets.US_ASCII));
+
+            String responseHeaders = readHttpHeaders(socket.getInputStream());
+            assertThat(responseHeaders).startsWith("HTTP/1.1 401 Unauthorized");
+            assertThat(responseHeaders.toLowerCase(Locale.ROOT))
+                    .contains("www-authenticate: negotiate");
+
+            assertThat(readOptionalHttpHeaders(socket.getInputStream())).isEmpty();
+        } finally {
+            webUI.shutdown();
+        }
+    }
+
+    private static String readHttpHeaders(InputStream inputStream) throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int value;
+        while ((value = inputStream.read()) != -1) {
+            buffer.write(value);
+            String headers = buffer.toString(StandardCharsets.US_ASCII.name());
+            if (headers.endsWith("\r\n\r\n")) {
+                return headers;
+            }
+        }
+        return buffer.toString(StandardCharsets.US_ASCII.name());
+    }
+
+    private static Optional<String> readOptionalHttpHeaders(InputStream inputStream)
+            throws Exception {
+        try {
+            return Optional.of(readHttpHeaders(inputStream));
+        } catch (SocketTimeoutException ignored) {
+            return Optional.empty();
         }
     }
 }

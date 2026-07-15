@@ -99,6 +99,18 @@
           <strong>Commit:</strong>
           {{ statusService.configuration['flink-revision'] }}
         </span>
+        <ng-container *ngIf="authenticatedUser$ | async as authenticatedUser">
+          <ng-container *ngIf="authenticatedUser.authenticated">
+            <nz-divider nzType="vertical"></nz-divider>
+            <span
+              class="authenticated-user"
+              [title]="authenticatedUser.principal || authenticatedUser.user"
+            >
+              <strong>User:</strong>
+              {{ authenticatedUser.user }}
+            </span>
+          </ng-container>
+        </ng-container>
         <nz-divider nzType="vertical"></nz-divider>
         <span [hidden]="(online$ | async) === false">
           <strong>Message:</strong>

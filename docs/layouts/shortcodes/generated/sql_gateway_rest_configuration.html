@@ -15,6 +15,54 @@
             <td>The address that should be used by clients to connect to the sql gateway server.</td>
         </tr>
         <tr>
+            <td><h5>authentication.cookie.path</h5></td>
+            <td style="word-wrap: break-word;">"/"</td>
+            <td>String</td>
+            <td>Cookie path used for SQL Gateway REST authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>authentication.kerberos.keytab</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Kerberos keytab used by the SQL Gateway REST endpoint SPNEGO acceptor.</td>
+        </tr>
+        <tr>
+            <td><h5>authentication.kerberos.name-rules</h5></td>
+            <td style="word-wrap: break-word;">"DEFAULT"</td>
+            <td>String</td>
+            <td>Kerberos auth-to-local rules used to derive the local user name from the authenticated Kerberos principal.</td>
+        </tr>
+        <tr>
+            <td><h5>authentication.kerberos.principal</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Kerberos principal used by the SQL Gateway REST endpoint SPNEGO acceptor. The HTTP/_HOST@REALM pattern is supported, and '*' uses all HTTP principals from the keytab.</td>
+        </tr>
+        <tr>
+            <td><h5>authentication.signature.secret</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Shared secret used to sign SQL Gateway REST authentication cookies. If neither this option nor authentication.signature.secret-file is configured, a random per-process secret is used.</td>
+        </tr>
+        <tr>
+            <td><h5>authentication.signature.secret-file</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>File containing the shared secret used to sign SQL Gateway REST authentication cookies. If neither this option nor authentication.signature.secret is configured, a random per-process secret is used.</td>
+        </tr>
+        <tr>
+            <td><h5>authentication.token.validity</h5></td>
+            <td style="word-wrap: break-word;">10 h</td>
+            <td>Duration</td>
+            <td>Validity period of the SQL Gateway REST authentication cookie.</td>
+        </tr>
+        <tr>
+            <td><h5>authentication.type</h5></td>
+            <td style="word-wrap: break-word;">NONE</td>
+            <td><p>Enum</p></td>
+            <td>The authentication type for the SQL Gateway REST endpoint. Supported values are NONE and KERBEROS.<br /><br />Possible values:<ul><li>"NONE"</li><li>"KERBEROS"</li></ul></td>
+        </tr>
+        <tr>
             <td><h5>bind-address</h5></td>
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>

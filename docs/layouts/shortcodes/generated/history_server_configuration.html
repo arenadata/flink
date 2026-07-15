@@ -51,6 +51,54 @@
             <td>Address of the HistoryServer's web interface.</td>
         </tr>
         <tr>
+            <td><h5>historyserver.web.authentication.cookie.path</h5></td>
+            <td style="word-wrap: break-word;">"/"</td>
+            <td>String</td>
+            <td>Cookie path for HistoryServer SPNEGO authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>historyserver.web.authentication.kerberos.keytab</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Absolute path to the keytab file for the HistoryServer SPNEGO principal. Required when HistoryServer web authentication type is KERBEROS.</td>
+        </tr>
+        <tr>
+            <td><h5>historyserver.web.authentication.kerberos.name-rules</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Kerberos auth-to-local rules used to map authenticated principals to local user names. If unset, the default rule is used.</td>
+        </tr>
+        <tr>
+            <td><h5>historyserver.web.authentication.kerberos.principal</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Kerberos principal for HistoryServer SPNEGO authentication. Required when HistoryServer web authentication type is KERBEROS. The principal must start with HTTP/. The _HOST placeholder is replaced with the local hostname. Use * to accept all HTTP principals in the keytab.</td>
+        </tr>
+        <tr>
+            <td><h5>historyserver.web.authentication.signature.secret</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Shared secret for signing HistoryServer SPNEGO authentication cookies. If neither this option nor the secret-file option is set, a random process-local secret is generated. Configure the same secret for all HistoryServer instances that should accept each other's authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>historyserver.web.authentication.signature.secret-file</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>File containing the shared secret for signing HistoryServer SPNEGO authentication cookies. Configure the same secret file for all HistoryServer instances that should accept each other's authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>historyserver.web.authentication.token.validity</h5></td>
+            <td style="word-wrap: break-word;">10 h</td>
+            <td>Duration</td>
+            <td>Validity period for HistoryServer SPNEGO authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>historyserver.web.authentication.type</h5></td>
+            <td style="word-wrap: break-word;">NONE</td>
+            <td><p>Enum</p></td>
+            <td>Authentication type for the HistoryServer web frontend and REST endpoints.<br /><br />Possible values:<ul><li>"NONE"</li><li>"KERBEROS"</li></ul></td>
+        </tr>
+        <tr>
             <td><h5>historyserver.web.port</h5></td>
             <td style="word-wrap: break-word;">8082</td>
             <td>Integer</td>

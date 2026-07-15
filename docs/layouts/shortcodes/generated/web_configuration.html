@@ -15,6 +15,54 @@
             <td>Access-Control-Allow-Origin header for all responses from the web-frontend.</td>
         </tr>
         <tr>
+            <td><h5>web.authentication.cookie.path</h5></td>
+            <td style="word-wrap: break-word;">"/"</td>
+            <td>String</td>
+            <td>Cookie path for JobManager web SPNEGO authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>web.authentication.kerberos.keytab</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Absolute path to the keytab file for the JobManager web SPNEGO principal. Required when JobManager web authentication type is KERBEROS.</td>
+        </tr>
+        <tr>
+            <td><h5>web.authentication.kerberos.name-rules</h5></td>
+            <td style="word-wrap: break-word;">"DEFAULT"</td>
+            <td>String</td>
+            <td>Kerberos auth-to-local rules used to map authenticated principals to local user names.</td>
+        </tr>
+        <tr>
+            <td><h5>web.authentication.kerberos.principal</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Kerberos principal for JobManager web SPNEGO authentication. Required when JobManager web authentication type is KERBEROS. The principal must start with HTTP/. The _HOST placeholder is replaced with the configured REST address. Use * to accept all HTTP principals in the keytab.</td>
+        </tr>
+        <tr>
+            <td><h5>web.authentication.signature.secret</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Shared secret for signing JobManager web SPNEGO authentication cookies. If neither this option nor the secret-file option is set, a random process-local secret is generated. Configure the same secret for all JobManager instances that should accept each other's authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>web.authentication.signature.secret-file</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>File containing the shared secret for signing JobManager web SPNEGO authentication cookies. Configure the same secret file for all JobManager instances that should accept each other's authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>web.authentication.token.validity</h5></td>
+            <td style="word-wrap: break-word;">10 h</td>
+            <td>Duration</td>
+            <td>Validity period for JobManager web SPNEGO authentication cookies.</td>
+        </tr>
+        <tr>
+            <td><h5>web.authentication.type</h5></td>
+            <td style="word-wrap: break-word;">NONE</td>
+            <td><p>Enum</p></td>
+            <td>Authentication type for the JobManager web frontend and REST endpoints.<br /><br />Possible values:<ul><li>"NONE"</li><li>"KERBEROS"</li></ul></td>
+        </tr>
+        <tr>
             <td><h5>web.cancel.enable</h5></td>
             <td style="word-wrap: break-word;">true</td>
             <td>Boolean</td>

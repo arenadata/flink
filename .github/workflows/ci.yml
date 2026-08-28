@@ -40,7 +40,7 @@ jobs:
     name: "Default (Java 21)"
     uses: ./.github/workflows/template.flink-ci.yml
     with:
-      environment: 'PROFILE="-Dinclude_hadoop_aws -Djdk21 -Phadoop3-tests"'
+      environment: 'PROFILE="-Dinclude_hadoop_aws -Djdk21 -Phadoop3-tests -Dflink.forkCountUnitTest=2"'
       jdk_version: 21
     secrets:
       s3_bucket: ${{ secrets.IT_CASE_S3_BUCKET }}

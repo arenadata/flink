@@ -28,7 +28,7 @@ under the License.
 
 	<groupId>org.apache.flink</groupId>
 	<artifactId>flink-parent</artifactId>
-	<version>1.20.4.2-4.4.0-0</version>
+	<version>1.20.4.2-4.4.0-1</version>
 
 	<name>Flink : </name>
 	<packaging>pom</packaging>
@@ -52,7 +52,7 @@ under the License.
 	<repositories>
 		<repository>
 			<id>arenadata</id>
-			<url>https://maven.pkg.github.com/arenadata/*</url>
+			<url>https://maven.arenadata.io/arenadata</url>
 		</repository>
 		<repository>
 			<id>repository.jboss.org</id>
@@ -120,7 +120,7 @@ under the License.
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<flink.hadoop.version>3.4.3.1-4.3.0-1</flink.hadoop.version>
+		<flink.hadoop.version>3.4.3.2-4.4.0-1</flink.hadoop.version>
 		<flink.XmxMax>3072m</flink.XmxMax>
 		<!-- XmxMax / forkCountITCase -->
 		<flink.XmxITCase>1536m</flink.XmxITCase>
@@ -159,7 +159,7 @@ under the License.
 		<curator.version>5.4.0</curator.version>
 		<avro.version>1.11.4</avro.version>
 		<!-- Version for transitive Jackson dependencies that are not used within Flink itself.-->
-		<jackson-bom.version>2.15.3</jackson-bom.version>
+		<jackson-bom.version>2.18.10</jackson-bom.version>
 		<javax.activation.api.version>1.2.0</javax.activation.api.version>
 		<jaxb.api.version>2.3.1</jaxb.api.version>
 		<junit4.version>4.13.2</junit4.version>
@@ -175,7 +175,7 @@ under the License.
 		<okhttp.version>3.14.9</okhttp.version>
 		<testcontainers.version>1.21.4</testcontainers.version>
 		<lz4.version>1.10.3</lz4.version>
-		<commons.io.version>2.15.1</commons.io.version>
+		<commons.io.version>2.22.0</commons.io.version>
 		<japicmp.skip>false</japicmp.skip>
 		<flink.convergence.phase>validate</flink.convergence.phase>
 		<!--
@@ -185,7 +185,7 @@ under the License.
 			to revisit the impact at that time.
 		-->
 		<minikdc.version>3.4.1</minikdc.version>
-		<hive.version>4.3.0.1-4.3.0-0</hive.version>
+		<hive.version>4.3.0.2-4.4.0-1</hive.version>
 		<orc.version>1.5.6</orc.version>
 		<japicmp.referenceVersion>1.20.3</japicmp.referenceVersion>
 		<japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>
@@ -585,7 +585,7 @@ under the License.
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-lang3</artifactId>
-				<version>3.12.0</version>
+				<version>3.20.0</version>
 			</dependency>
 
 			<dependency>
@@ -944,7 +944,7 @@ under the License.
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-bom</artifactId>
-				<version>4.1.100.Final</version>
+				<version>4.1.137.Final</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

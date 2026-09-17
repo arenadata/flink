@@ -26,7 +26,7 @@ under the License.
 	<parent>
 		<groupId>org.apache.flink</groupId>
 		<artifactId>flink-connectors</artifactId>
-		<version>1.20.4.2-4.4.0-0</version>
+		<version>1.20.4.2-4.4.0-1</version>
 	</parent>
 
 	<artifactId>flink-connector-hive_${scala.binary.version}</artifactId>
@@ -44,7 +44,7 @@ under the License.
 		java.lang.NoClassDefFoundError: org/apache/hadoop/metrics/Updater errors
 		Using this dedicated property avoids CI failures with the Hadoop 3 profile
 		-->
-		<hive.hadoop.version>3.4.3.1-4.3.0-1</hive.hadoop.version>
+		<hive.hadoop.version>3.4.3.2-4.4.0-1</hive.hadoop.version>
 	</properties>
 
 	<dependencyManagement>
@@ -1476,7 +1476,7 @@ under the License.
 					<!-- Bump arrow netty dependency -->
 					<groupId>io.netty</groupId>
 					<artifactId>netty-buffer</artifactId>
-					<version>4.1.46.Final</version>
+					<version>4.1.137.Final</version>
 					<scope>provided</scope>
 				</dependency>
 
@@ -1484,7 +1484,7 @@ under the License.
 					<!-- Bump arrow netty dependency -->
 					<groupId>io.netty</groupId>
 					<artifactId>netty-common</artifactId>
-					<version>4.1.46.Final</version>
+					<version>4.1.137.Final</version>
 					<scope>provided</scope>
 				</dependency>
 			</dependencies>

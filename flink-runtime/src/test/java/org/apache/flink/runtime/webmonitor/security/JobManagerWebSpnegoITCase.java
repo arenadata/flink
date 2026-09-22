@@ -18,12 +18,18 @@
 
 package org.apache.flink.runtime.webmonitor.security;
 
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.configuration.WebOptions;
 import org.apache.flink.configuration.WebOptions.WebAuthenticationType;
+import org.apache.flink.runtime.blob.NoOpTransientBlobService;
+import org.apache.flink.runtime.leaderelection.StandaloneLeaderElection;
 import org.apache.flink.runtime.rest.FileUploadHandler;
 import org.apache.flink.runtime.rest.HttpMethodWrapper;
+import org.apache.flink.runtime.rest.handler.RestHandlerConfiguration;
+import org.apache.flink.runtime.rest.handler.RestHandlerSpecification;
+import org.apache.flink.runtime.rest.handler.legacy.metrics.VoidMetricFetcher;
 import org.apache.flink.runtime.rest.messages.EmptyMessageParameters;
 import org.apache.flink.runtime.rest.messages.EmptyRequestBody;
 import org.apache.flink.runtime.rest.messages.EmptyResponseBody;
@@ -32,10 +38,15 @@ import org.apache.flink.runtime.rest.util.TestMessageHeaders;
 import org.apache.flink.runtime.rest.util.TestRestHandler;
 import org.apache.flink.runtime.rest.util.TestRestServerEndpoint;
 import org.apache.flink.runtime.security.KerberosUtils;
+import org.apache.flink.runtime.util.TestingFatalErrorHandler;
 import org.apache.flink.runtime.webmonitor.RestfulGateway;
+import org.apache.flink.runtime.webmonitor.TestingExecutionGraphCache;
 import org.apache.flink.runtime.webmonitor.TestingRestfulGateway;
+import org.apache.flink.runtime.webmonitor.WebMonitorEndpoint;
 import org.apache.flink.runtime.webmonitor.retriever.GatewayRetriever;
+import org.apache.flink.util.ExecutorUtils;
 
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelInboundHandler;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpResponseStatus;
 
 import okhttp3.MediaType;
@@ -57,6 +68,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.LoginContext;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -64,8 +76,13 @@ import java.nio.file.Path;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,19 +102,9 @@ class JobManagerWebSpnegoITCase {
         MiniKdc kdc = null;
         LoginContext loginContext = null;
         try {
-            Path kdcDir = tempDir.resolve("kdc");
-            Files.createDirectories(kdcDir);
-            Properties kdcConf = MiniKdc.createConf();
-            kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, HOST);
-            kdc = new MiniKdc(kdcConf, kdcDir.toFile());
-            kdc.start();
-            System.setProperty(MiniKdc.JAVA_SECURITY_KRB5_CONF, kdc.getKrb5conf().toString());
-            System.setProperty("sun.security.krb5.disableReferrals", "true");
-
             Path serverKeytab = tempDir.resolve("server.keytab");
             Path clientKeytab = tempDir.resolve("client.keytab");
-            kdc.createPrincipal(serverKeytab.toFile(), HTTP_SERVICE_PRINCIPAL_NAME);
-            kdc.createPrincipal(clientKeytab.toFile(), CLIENT_PRINCIPAL_NAME);
+            kdc = startMiniKdc(tempDir, serverKeytab, clientKeytab);
 
             Configuration configuration = createKerberosConfiguration(tempDir, serverKeytab);
             JobManagerWebAuthenticationHandler.Factory authenticationHandlerFactory =
@@ -194,6 +201,115 @@ class JobManagerWebSpnegoITCase {
                 kdc.stop();
             }
             restoreKerberosProperties(previousProperties);
+        }
+    }
+
+    @Test
+    void shouldRejectPreAuthMultipartUploadsOnWebMonitorEndpoint(@TempDir Path tempDir)
+            throws Exception {
+        Properties previousProperties = rememberKerberosProperties();
+        MiniKdc kdc = null;
+        LoginContext loginContext = null;
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        try {
+            Path serverKeytab = tempDir.resolve("server.keytab");
+            Path clientKeytab = tempDir.resolve("client.keytab");
+            kdc = startMiniKdc(tempDir, serverKeytab, clientKeytab);
+
+            Configuration configuration = createKerberosConfiguration(tempDir, serverKeytab);
+            GatewayRetriever<RestfulGateway> gatewayRetriever =
+                    () ->
+                            CompletableFuture.completedFuture(
+                                    new TestingRestfulGateway.Builder().build());
+
+            try (WebMonitorEndpoint<RestfulGateway> endpoint =
+                    new WebMonitorEndpoint<RestfulGateway>(
+                            CompletableFuture::new,
+                            configuration,
+                            RestHandlerConfiguration.fromConfiguration(configuration),
+                            CompletableFuture::new,
+                            NoOpTransientBlobService.INSTANCE,
+                            executor,
+                            VoidMetricFetcher.INSTANCE,
+                            new StandaloneLeaderElection(UUID.randomUUID()),
+                            TestingExecutionGraphCache.newBuilder().build(),
+                            new TestingFatalErrorHandler()) {
+                        @Override
+                        protected List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>>
+                                initializeHandlers(CompletableFuture<String> localAddressFuture) {
+                            List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers =
+                                    super.initializeHandlers(localAddressFuture);
+                            handlers.add(
+                                    new Tuple2<>(
+                                            TestUploadHeaders.INSTANCE,
+                                            new TestRestHandler<>(
+                                                    gatewayRetriever,
+                                                    TestUploadHeaders.INSTANCE,
+                                                    CompletableFuture.completedFuture(
+                                                            EmptyResponseBody.getInstance()))));
+                            return handlers;
+                        }
+                    }) {
+                endpoint.start();
+                InetSocketAddress serverAddress = endpoint.getServerAddress();
+                String baseUrl =
+                        "http://" + serverAddress.getHostString() + ":" + serverAddress.getPort();
+                OkHttpClient httpClient = new OkHttpClient();
+
+                assertSpnegoChallenge(
+                        httpClient,
+                        new Request.Builder()
+                                .url(baseUrl + "/jars/upload")
+                                .post(multipartUploadBody()));
+                assertThatUploadDirContainsNoFiles(tempDir);
+
+                loginContext =
+                        loginFromKeytab(CLIENT_PRINCIPAL_NAME + "@" + kdc.getRealm(), clientKeytab);
+                try (Response uploadResponse =
+                        spnegoRequest(
+                                httpClient,
+                                new Request.Builder()
+                                        .url(baseUrl + "/jars/upload")
+                                        .post(multipartUploadBody()),
+                                loginContext.getSubject())) {
+                    assertThat(uploadResponse.code()).isEqualTo(200);
+                    assertThat(uploadResponse.header("Set-Cookie"))
+                            .contains(AuthenticatedURL.AUTH_COOKIE + "=");
+                }
+            }
+        } finally {
+            if (loginContext != null) {
+                loginContext.logout();
+            }
+            if (kdc != null) {
+                kdc.stop();
+            }
+            ExecutorUtils.gracefulShutdown(10L, TimeUnit.SECONDS, executor);
+            restoreKerberosProperties(previousProperties);
+        }
+    }
+
+    private static MiniKdc startMiniKdc(Path tempDir, Path serverKeytab, Path clientKeytab)
+            throws Exception {
+        Path kdcDir = tempDir.resolve("kdc");
+        Files.createDirectories(kdcDir);
+        Properties kdcConf = MiniKdc.createConf();
+        kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, HOST);
+        MiniKdc kdc = new MiniKdc(kdcConf, kdcDir.toFile());
+        kdc.start();
+        System.setProperty(MiniKdc.JAVA_SECURITY_KRB5_CONF, kdc.getKrb5conf().toString());
+        System.setProperty("sun.security.krb5.disableReferrals", "true");
+        kdc.createPrincipal(serverKeytab.toFile(), HTTP_SERVICE_PRINCIPAL_NAME);
+        kdc.createPrincipal(clientKeytab.toFile(), CLIENT_PRINCIPAL_NAME);
+        return kdc;
+    }
+
+    private static void assertThatUploadDirContainsNoFiles(Path tempDir) throws IOException {
+        Path flinkUploadDir = tempDir.resolve("uploads").resolve("flink-web-upload");
+        if (Files.exists(flinkUploadDir)) {
+            try (Stream<Path> files = Files.walk(flinkUploadDir)) {
+                assertThat(files.filter(Files::isRegularFile)).isEmpty();
+            }
         }
     }
 

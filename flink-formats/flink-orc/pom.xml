@@ -167,7 +167,7 @@ under the License.
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
-			<version>${protoc.version}</version>
+			<version>${orc.protobuf.version}</version>
 		</dependency>
 
 		<dependency>

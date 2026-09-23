@@ -66,7 +66,7 @@ under the License.
 									<include>org.apache.orc:orc-shims</include>
 									<include>org.apache.hive:hive-storage-api</include>
 									<include>io.airlift:aircompressor</include>
-									<include>commons-lang:commons-lang</include>
+									<include>org.threeten:threeten-extra</include>
 									<include>com.google.protobuf:protobuf-java</include>
 								</includes>
 							</artifactSet>

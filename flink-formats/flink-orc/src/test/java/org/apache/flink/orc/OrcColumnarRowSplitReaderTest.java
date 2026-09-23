@@ -416,6 +416,37 @@ public class OrcColumnarRowSplitReaderTest {
         }
     }
 
+    /**
+     * ORC treats a file whose top-level fields are all named {@code _col0.._colN} as one written
+     * without column names and falls back to matching the reader schema positionally - but only
+     * when the positional evolution level reaches {@link org.apache.orc.Reader.Options}, which
+     * {@code new Reader.Options()} leaves at 0. Without that, such files (the ones Hive produces)
+     * read back as all NULLs on ORC 1.6+, while ORC 1.5.6 read them fine.
+     */
+    @Test
+    void testReadFileWithDefaultColumnNames() throws IOException {
+        // test-data-flat.orc physically stores _col0.._col8; ask for f0..f8 instead
+        String[] mismatchedNames =
+                IntStream.range(0, testSchemaFlat.length)
+                        .mapToObj(i -> "f" + i)
+                        .toArray(String[]::new);
+        FileInputSplit split = createSplits(testFileFlat, 1)[0];
+
+        try (OrcColumnarRowSplitReader reader =
+                createReader(
+                        new int[] {0, 1},
+                        testSchemaFlat,
+                        mismatchedNames,
+                        new HashMap<>(),
+                        split,
+                        new Configuration())) {
+            assertThat(reader.reachedEnd()).isFalse();
+            RowData row = reader.nextRecord(null);
+            assertThat(row.isNullAt(0)).isFalse();
+            assertThat(row.isNullAt(1)).isFalse();
+        }
+    }
+
     protected static Timestamp toTimestamp(int i) {
         return new Timestamp(
                 i + 1000, (i % 12) + 1, (i % 28) + 1, i % 24, i % 60, i % 60, i * 1_000 + i);
@@ -442,9 +473,21 @@ public class OrcColumnarRowSplitReaderTest {
             Map<String, Object> partitionSpec,
             FileInputSplit split)
             throws IOException {
+        return createReader(
+                selectedFields, fullTypes, fullNames, partitionSpec, split, new Configuration());
+    }
+
+    protected OrcColumnarRowSplitReader createReader(
+            int[] selectedFields,
+            DataType[] fullTypes,
+            String[] fullNames,
+            Map<String, Object> partitionSpec,
+            FileInputSplit split,
+            Configuration conf)
+            throws IOException {
         return OrcSplitReaderUtil.genPartColumnarRowReader(
                 "2.3.0",
-                new Configuration(),
+                conf,
                 fullNames,
                 fullTypes,
                 partitionSpec,

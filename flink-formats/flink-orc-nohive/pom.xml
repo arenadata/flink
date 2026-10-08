@@ -100,8 +100,14 @@ under the License.
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
-			<version>${protoc.version}</version>
+			<version>${orc.protobuf.version}</version>
 			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>io.airlift</groupId>
+			<artifactId>aircompressor</artifactId>
+			<version>${orc.aircompressor.version}</version>
 		</dependency>
 
 		<dependency>

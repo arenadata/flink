@@ -101,10 +101,11 @@ class OrcColumnarRowSplitReaderNoHiveTest extends OrcColumnarRowSplitReaderTest 
             DataType[] fullTypes,
             String[] fullNames,
             Map<String, Object> partitionSpec,
-            FileInputSplit split)
+            FileInputSplit split,
+            Configuration conf)
             throws IOException {
         return OrcNoHiveSplitReaderUtil.genPartColumnarRowReader(
-                new Configuration(),
+                conf,
                 fullNames,
                 fullTypes,
                 partitionSpec,

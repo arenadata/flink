@@ -44,6 +44,11 @@ public class OrcBulkWriterTestUtil {
     public static final ByteBuffer USER_METADATA_VALUE = ByteBuffer.wrap("hello".getBytes());
 
     public static void validate(File files, List<Record> expected) throws IOException {
+        validate(files, expected, CompressionKind.LZ4);
+    }
+
+    public static void validate(File files, List<Record> expected, CompressionKind compressionKind)
+            throws IOException {
         final File[] buckets = files.listFiles();
         assertThat(buckets).isNotNull();
         assertThat(buckets).hasSize(1);
@@ -61,7 +66,7 @@ public class OrcBulkWriterTestUtil {
 
             assertThat(reader.getNumberOfRows()).isEqualTo(3);
             assertThat(reader.getSchema().getFieldNames()).hasSize(2);
-            assertThat(reader.getCompressionKind()).isSameAs(CompressionKind.LZ4);
+            assertThat(reader.getCompressionKind()).isSameAs(compressionKind);
             assertThat(reader.hasMetadataValue(USER_METADATA_KEY)).isTrue();
             assertThat(reader.getMetadataKeys()).contains(USER_METADATA_KEY);
 

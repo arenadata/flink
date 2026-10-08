@@ -65,6 +65,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -77,19 +78,20 @@ public class OrcFileSystemITCase extends BatchFileSystemITCaseBase {
 
     @TempDir public static java.nio.file.Path temporaryFolder;
 
-    @Parameter public boolean configure;
+    /** Empty means the codec is left at the ORC default, which is ZLIB. */
+    @Parameter public String compression;
 
-    @Parameters(name = "configure={0}")
-    public static Collection<Boolean> parameters() {
-        return Arrays.asList(false, true);
+    @Parameters(name = "compression={0}")
+    public static Collection<String> parameters() {
+        return Arrays.asList("", "snappy", "zstd");
     }
 
     @Override
     public String[] formatProperties() {
         List<String> ret = new ArrayList<>();
         ret.add("'format'='orc'");
-        if (configure) {
-            ret.add("'orc.compress'='snappy'");
+        if (!compression.isEmpty()) {
+            ret.add("'orc.compress'='" + compression + "'");
         }
         return ret.toArray(new String[0]);
     }
@@ -108,11 +110,9 @@ public class OrcFileSystemITCase extends BatchFileSystemITCaseBase {
 
         try {
             Reader reader = OrcFile.createReader(path, OrcFile.readerOptions(new Configuration()));
-            if (configure) {
-                assertThat(reader.getCompressionKind().toString()).isEqualTo("SNAPPY");
-            } else {
-                assertThat(reader.getCompressionKind().toString()).isEqualTo("ZLIB");
-            }
+            String expectedKind =
+                    compression.isEmpty() ? "ZLIB" : compression.toUpperCase(Locale.ROOT);
+            assertThat(reader.getCompressionKind().toString()).isEqualTo(expectedKind);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

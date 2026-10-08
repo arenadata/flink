@@ -68,7 +68,11 @@ public class OrcNoHiveShim implements OrcShim<VectorizedRowBatch> {
                         .range(offsetAndLength.f0, offsetAndLength.f1)
                         .useZeroCopy(OrcConf.USE_ZEROCOPY.getBoolean(conf))
                         .skipCorruptRecords(OrcConf.SKIP_CORRUPT_DATA.getBoolean(conf))
-                        .tolerateMissingSchema(OrcConf.TOLERATE_MISSING_SCHEMA.getBoolean(conf));
+                        .tolerateMissingSchema(OrcConf.TOLERATE_MISSING_SCHEMA.getBoolean(conf))
+                        .forcePositionalEvolution(
+                                OrcConf.FORCE_POSITIONAL_EVOLUTION.getBoolean(conf))
+                        .positionalEvolutionLevel(
+                                OrcConf.FORCE_POSITIONAL_EVOLUTION_LEVEL.getInt(conf));
 
         // TODO configure filters
 

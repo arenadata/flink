@@ -31,8 +31,10 @@ import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.
 import org.apache.flink.streaming.api.functions.sink.filesystem.legacy.StreamingFileSink;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Test;
+import org.apache.orc.CompressionKind;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.util.Arrays;
@@ -46,11 +48,18 @@ class OrcBulkWriterITCase {
     private final List<Record> testData =
             Arrays.asList(new Record("Sourav", 41), new Record("Saul", 35), new Record("Kim", 31));
 
-    @Test
-    void testOrcBulkWriter(@TempDir File outDir) throws Exception {
+    /**
+     * Runs a real job with checkpointing enabled for the codecs that matter most here: the previous
+     * default and ZSTD, which is only available since ORC 1.6.0.
+     */
+    @ParameterizedTest
+    @EnumSource(
+            value = CompressionKind.class,
+            names = {"LZ4", "ZSTD"})
+    void testOrcBulkWriter(CompressionKind compressionKind, @TempDir File outDir) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         final Properties writerProps = new Properties();
-        writerProps.setProperty("orc.compress", "LZ4");
+        writerProps.setProperty("orc.compress", compressionKind.name());
 
         final OrcBulkWriterFactory<Record> factory =
                 new OrcBulkWriterFactory<>(
@@ -74,6 +83,6 @@ class OrcBulkWriterITCase {
 
         env.execute();
 
-        OrcBulkWriterTestUtil.validate(outDir, testData);
+        OrcBulkWriterTestUtil.validate(outDir, testData, compressionKind);
     }
 }

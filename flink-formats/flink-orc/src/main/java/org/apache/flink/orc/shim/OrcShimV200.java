@@ -78,7 +78,9 @@ public class OrcShimV200 implements OrcShim<VectorizedRowBatch> {
 
     protected Reader.Options readOrcConf(Reader.Options options, Configuration conf) {
         return options.useZeroCopy(OrcConf.USE_ZEROCOPY.getBoolean(conf))
-                .skipCorruptRecords(OrcConf.SKIP_CORRUPT_DATA.getBoolean(conf));
+                .skipCorruptRecords(OrcConf.SKIP_CORRUPT_DATA.getBoolean(conf))
+                .forcePositionalEvolution(OrcConf.FORCE_POSITIONAL_EVOLUTION.getBoolean(conf))
+                .positionalEvolutionLevel(OrcConf.FORCE_POSITIONAL_EVOLUTION_LEVEL.getInt(conf));
     }
 
     @Override

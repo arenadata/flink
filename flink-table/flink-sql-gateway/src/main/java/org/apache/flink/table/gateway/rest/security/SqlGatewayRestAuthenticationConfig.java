@@ -111,7 +111,7 @@ final class SqlGatewayRestAuthenticationConfig {
         String signatureSecretFile =
                 endpointConfig.get(SqlGatewayRestOptions.AUTHENTICATION_SIGNATURE_SECRET_FILE);
 
-        if (!tokenValidity.isPositive()) {
+        if (tokenValidity.isNegative() || tokenValidity.isZero()) {
             throw new ConfigurationException(
                     String.format(
                             "SQL Gateway REST authentication option '%s' must be positive.",

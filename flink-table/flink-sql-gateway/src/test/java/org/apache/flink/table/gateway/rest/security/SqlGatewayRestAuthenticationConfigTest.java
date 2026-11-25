@@ -32,6 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -147,6 +148,23 @@ class SqlGatewayRestAuthenticationConfigTest {
                         () -> SqlGatewayRestAuthenticationConfig.fromConfiguration(configuration))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("BASIC");
+    }
+
+    @Test
+    void shouldValidateTokenValidityWithoutTruncatingSubSecondDurations() throws Exception {
+        Configuration configuration = kerberosConfiguration();
+        set(configuration, SqlGatewayRestOptions.AUTHENTICATION_TOKEN_VALIDITY.key(), "0 ms");
+
+        assertThatThrownBy(
+                        () -> SqlGatewayRestAuthenticationConfig.fromConfiguration(configuration))
+                .isInstanceOf(ConfigurationException.class)
+                .hasMessageContaining("must be positive");
+
+        set(configuration, SqlGatewayRestOptions.AUTHENTICATION_TOKEN_VALIDITY.key(), "1 ms");
+        assertThat(
+                        SqlGatewayRestAuthenticationConfig.fromConfiguration(configuration)
+                                .tokenValidity())
+                .isEqualTo(Duration.ofMillis(1));
     }
 
     private static Configuration kerberosConfiguration() {
